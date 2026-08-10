@@ -2,17 +2,14 @@ package com.vibhor.ecommerceanalytics.DTO;
 
 import lombok.*;
 
-import java.math.BigDecimal;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class TopProductsDTO {
+public class InventoryAlertDTO {
 
     private Integer productId;
     private String productName;
-    private BigDecimal Quantity;
-    private BigDecimal Revenue;
+    private Integer stock;
 }

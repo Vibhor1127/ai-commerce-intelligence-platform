@@ -9,10 +9,9 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class TopProductsDTO {
+public class CategoryRevenueDTO {
 
-    private Integer productId;
-    private String productName;
-    private BigDecimal Quantity;
-    private BigDecimal Revenue;
+    private Integer categoryId;
+    private String categoryName;
+    private BigDecimal revenue;
 }
