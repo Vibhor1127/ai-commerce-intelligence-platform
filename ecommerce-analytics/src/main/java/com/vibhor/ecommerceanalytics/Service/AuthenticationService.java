@@ -40,8 +40,13 @@ public class AuthenticationService {
                 passwordEncoder.encode(dto.getPassword())
         );
 
-        // Every public registration gets USER role
-        user.setRole("USER");
+        // Use requested role if provided, default to USER
+        String requestedRole = dto.getRole();
+        if (requestedRole != null && !requestedRole.isBlank()) {
+            user.setRole(requestedRole.toUpperCase());
+        } else {
+            user.setRole("USER");
+        }
 
         userRepository.save(user);
 

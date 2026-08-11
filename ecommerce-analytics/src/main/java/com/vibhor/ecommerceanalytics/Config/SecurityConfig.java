@@ -57,6 +57,9 @@ public class SecurityConfig {
                         // Registration and login are public
                         .requestMatchers("/auth/**").permitAll()
 
+                        // AI endpoints are only for ADMIN
+                        .requestMatchers("/ai/**").hasRole("ADMIN")
+
                         // Analytics are only for ADMIN
                         .requestMatchers("/analytics/**").hasRole("ADMIN")
 
