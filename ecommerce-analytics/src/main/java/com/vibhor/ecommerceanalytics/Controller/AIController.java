@@ -1,36 +1,25 @@
 package com.vibhor.ecommerceanalytics.Controller;
 
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.vibhor.ecommerceanalytics.DTO.AIAnalyticsRequest;
+import com.vibhor.ecommerceanalytics.Service.AIAnalyticsService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/ai")
 public class AIController {
 
-    private final ChatClient chatClient;
+    private final AIAnalyticsService aiAnalyticsService;
 
-    public AIController(ChatClient.Builder chatClientBuilder) {
-        this.chatClient = chatClientBuilder.build();
+    public AIController(AIAnalyticsService aiAnalyticsService) {
+        this.aiAnalyticsService = aiAnalyticsService;
     }
 
-    // Simple test to check AI connection
-    @GetMapping("/test")
-    public ResponseEntity<String> testAI() {
+    @PostMapping("/ask")
+    public AIAnalyticsRequest askQuestion(
+            @RequestBody com.vibhor.ecommerceanalytics.DTO.AIQuestionRequest request) {
 
-        try {
-            String response = chatClient
-                    .prompt("Reply with exactly: NVIDIA connection successful.")
-                    .call()
-                    .content();
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("AI call failed: " + e.getMessage());
-        }
+        return aiAnalyticsService.understandQuestion(
+                request.getQuestion()
+        );
     }
-}
+}
