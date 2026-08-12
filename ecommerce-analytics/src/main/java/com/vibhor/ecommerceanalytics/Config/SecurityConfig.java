@@ -54,16 +54,13 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Registration and login are public
                         .requestMatchers("/auth/**").permitAll()
 
-                        // AI endpoints are only for ADMIN
-                        .requestMatchers("/ai/**").hasRole("ADMIN")
+                        // Temporary AI connectivity test
+//                        .requestMatchers("/ai/test").permitAll()
 
-                        // Analytics are only for ADMIN
                         .requestMatchers("/analytics/**").hasRole("ADMIN")
 
-                        // Everything else requires login
                         .anyRequest().authenticated()
                 )
 
