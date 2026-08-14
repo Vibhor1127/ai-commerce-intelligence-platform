@@ -1,182 +1,246 @@
 package com.vibhor.ecommerceanalytics.Service;
 
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vibhor.ecommerceanalytics.DTO.AIAnalyticsRequest;
+import com.vibhor.ecommerceanalytics.DTO.AnalyticsIntent;
+
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
+
+
 
 @Service
 public class AIAnalyticsService {
 
+
     private final ChatClient chatClient;
+
     private final ObjectMapper objectMapper;
 
-    public AIAnalyticsService(ChatClient.Builder chatClientBuilder) {
-        this.chatClient = chatClientBuilder.build();
-        this.objectMapper = new ObjectMapper();
+
+
+    public AIAnalyticsService(
+            ChatClient.Builder chatClientBuilder
+    ) {
+
+        this.chatClient =
+                chatClientBuilder.build();
+
+        this.objectMapper =
+                new ObjectMapper();
     }
 
-    public AIAnalyticsRequest understandQuestion(String question) {
+
+
+
+
+    public AnalyticsIntent understandQuestion(
+            String question
+    ) {
+
 
         String prompt = """
-                You are an e-commerce analytics intent parser.
 
-                Your ONLY task is to convert the user's question
-                into a structured analytics request.
+                You are an AI Business Intelligence
+                intent classifier for an e-commerce platform.
+
+                Your task:
+
+                Understand the user's business question
+                and convert it into a structured intent.
 
                 Return ONLY valid JSON.
-                Do not add markdown.
-                Do not add explanations.
-                Do not add ```json or ```.
 
-                JSON fields:
-                metric
-                dimension
-                operation
-                period
-                limit
+                Do not add:
+                - markdown
+                - explanations
+                - comments
 
-                Allowed metrics:
-                revenue
-                sales
-                customers
-                products
-                inventory
-                customer_lifetime_value
 
-                Allowed dimensions:
-                customer
-                product
-                category
-                month
-                inventory
-
-                Allowed operations:
-                top
-                trend
-                compare
-                summary
-                inactive
-                alert
-
-                Examples:
-
-                User:
-                Who are my top customers?
-
-                JSON:
-                {
-                  "metric": "revenue",
-                  "dimension": "customer",
-                  "operation": "top",
-                  "period": null,
-                  "limit": 10
-                }
-
-                User:
-                Which products sell the most?
-
-                JSON:
-                {
-                  "metric": "sales",
-                  "dimension": "product",
-                  "operation": "top",
-                  "period": null,
-                  "limit": 10
-                }
-
-                User:
-                Which customers are inactive?
-
-                JSON:
-                {
-                  "metric": "customers",
-                  "dimension": "customer",
-                  "operation": "inactive",
-                  "period": null,
-                  "limit": null
-                }
-
-                User:
-                Which categories generate the most revenue?
-
-                JSON:
-                {
-                  "metric": "revenue",
-                  "dimension": "category",
-                  "operation": "top",
-                  "period": null,
-                  "limit": 10
-                }
-
-                If the question cannot be understood, return:
+                JSON FORMAT:
 
                 {
-                  "metric": "unknown",
-                  "dimension": "unknown",
-                  "operation": "unknown",
-                  "period": null,
-                  "limit": null
+                  "intent":"",
+                  "entity":"",
+                  "metric":"",
+                  "limit":10
                 }
 
-                User question:
+
+
+                SUPPORTED INTENTS:
+
+
+                Customer Analytics:
+
+                TOP_CUSTOMERS
+                CUSTOMER_VALUE
+                INACTIVE_CUSTOMERS
+
+
+                Product Analytics:
+
+                TOP_PRODUCTS
+                LOW_PERFORMING_PRODUCTS
+
+
+                Revenue Analytics:
+
+                REVENUE_SUMMARY
+                REVENUE_TREND
+
+
+                Inventory Analytics:
+
+                INVENTORY_SUMMARY
+                LOW_STOCK_PRODUCTS
+
+
+
+                EXAMPLES:
+
+
+
+                Question:
+                Who are my biggest buyers?
+
+
+                Output:
+
+                {
+                  "intent":"TOP_CUSTOMERS",
+                  "entity":"CUSTOMER",
+                  "metric":"TOTAL_SPENDING",
+                  "limit":10
+                }
+
+
+
+
+                Question:
+                Show customers who stopped purchasing
+
+
+                Output:
+
+                {
+                  "intent":"INACTIVE_CUSTOMERS",
+                  "entity":"CUSTOMER",
+                  "metric":"LAST_ORDER_DATE",
+                  "limit":null
+                }
+
+
+
+
+
+                Question:
+                Which products generate the most revenue?
+
+
+                Output:
+
+                {
+                  "intent":"TOP_PRODUCTS",
+                  "entity":"PRODUCT",
+                  "metric":"REVENUE",
+                  "limit":10
+                }
+
+
+
+
+
+                Question:
+                Which products need restocking?
+
+
+                Output:
+
+                {
+                  "intent":"LOW_STOCK_PRODUCTS",
+                  "entity":"INVENTORY",
+                  "metric":"STOCK_LEVEL",
+                  "limit":10
+                }
+
+
+
+
+
+                If the question is unrelated:
+
+                {
+                  "intent":"UNKNOWN",
+                  "entity":"UNKNOWN",
+                  "metric":"UNKNOWN",
+                  "limit":null
+                }
+
+
+
+                User Question:
+
                 %s
+
+
                 """.formatted(question);
 
 
-        String aiResponse = chatClient
-                .prompt(prompt)
-                .call()
-                .content();
 
+        String aiResponse =
+                chatClient
+                        .prompt(prompt)
+                        .call()
+                        .content();
 
-        if (aiResponse == null || aiResponse.isBlank()) {
-
-            throw new RuntimeException(
-                    "AI returned an empty analytics response"
-            );
-        }
 
 
         try {
 
-            // Remove accidental Markdown code fences
-            String cleanedResponse = aiResponse
-                    .trim()
-                    .replace("```json", "")
-                    .replace("```", "")
-                    .trim();
+
+            String cleanedResponse =
+                    aiResponse
+                            .replace("```json", "")
+                            .replace("```", "")
+                            .trim();
 
 
-            AIAnalyticsRequest request =
+
+            AnalyticsIntent intent =
                     objectMapper.readValue(
                             cleanedResponse,
-                            AIAnalyticsRequest.class
+                            AnalyticsIntent.class
                     );
 
 
-            // Validate that AI actually produced an intent
-            if (request.getMetric() == null
-                    || request.getDimension() == null
-                    || request.getOperation() == null) {
+
+            if(intent.getIntent()==null) {
 
                 throw new RuntimeException(
-                        "AI returned incomplete analytics request"
+                        "Intent missing from AI response"
                 );
             }
 
 
-            return request;
+            return intent;
 
 
-        } catch (Exception e) {
+
+        }
+        catch(Exception e) {
+
 
             throw new RuntimeException(
-                    "AI returned invalid analytics request. "
-                            + "Raw response: "
+                    "AI intent parsing failed. Raw response: "
                             + aiResponse,
                     e
             );
+
         }
+
+
     }
+
+
 }

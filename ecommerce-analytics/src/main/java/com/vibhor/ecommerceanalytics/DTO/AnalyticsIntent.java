@@ -1,18 +1,27 @@
 package com.vibhor.ecommerceanalytics.DTO;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-@NoArgsConstructor
-@AllArgsConstructor
+
+
 @Getter
-@Setter
-public class AIAnalyticsRequest {
+@AllArgsConstructor
+@NoArgsConstructor
+public class AnalyticsIntent {
+
+
+    private String intent;
+
+
+    private String entity;
+
 
     private String metric;
-    private String dimension;
-    private String operation;
-    private String period;
+
+
     private Integer limit;
+
+
 }

@@ -7,17 +7,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vibhor.ecommerceanalytics.DTO.AIAnalyticsRequest;
 import com.vibhor.ecommerceanalytics.DTO.AIExplanationResponse;
 import com.vibhor.ecommerceanalytics.DTO.AIQuestionRequest;
+import com.vibhor.ecommerceanalytics.DTO.AnalyticsIntent;
 import com.vibhor.ecommerceanalytics.DTO.BusinessInsightData;
 import com.vibhor.ecommerceanalytics.DTO.TopCustomerDTO;
+
 
 import com.vibhor.ecommerceanalytics.Service.AIAnalyticsExecutorService;
 import com.vibhor.ecommerceanalytics.Service.AIAnalyticsService;
 import com.vibhor.ecommerceanalytics.Service.AIAnalyticsValidatorService;
 import com.vibhor.ecommerceanalytics.Service.AIExplanationService;
 import com.vibhor.ecommerceanalytics.Service.BusinessInsightService;
+import com.vibhor.ecommerceanalytics.Service.IntentRouterService;
 
 
 import org.springframework.web.bind.annotation.*;
+
 
 import java.util.List;
 
@@ -28,7 +32,10 @@ import java.util.List;
 public class AIController {
 
 
+
     private final AIAnalyticsService aiAnalyticsService;
+
+    private final IntentRouterService intentRouterService;
 
     private final AIAnalyticsValidatorService validatorService;
 
@@ -42,16 +49,27 @@ public class AIController {
 
 
 
+
     public AIController(
+
             AIAnalyticsService aiAnalyticsService,
+
+            IntentRouterService intentRouterService,
+
             AIAnalyticsValidatorService validatorService,
+
             AIAnalyticsExecutorService executorService,
+
             AIExplanationService explanationService,
+
             BusinessInsightService businessInsightService
+
     ) {
 
 
         this.aiAnalyticsService = aiAnalyticsService;
+
+        this.intentRouterService = intentRouterService;
 
         this.validatorService = validatorService;
 
@@ -62,7 +80,10 @@ public class AIController {
         this.businessInsightService = businessInsightService;
 
         this.objectMapper = new ObjectMapper();
+
     }
+
+
 
 
 
@@ -70,34 +91,80 @@ public class AIController {
 
     @PostMapping("/ask")
     public AIExplanationResponse askQuestion(
+
             @RequestBody AIQuestionRequest request
+
     ) {
 
 
 
-        // 1. Understand question
+        // 1. Understand user question using AI Intent Layer
+
+        AnalyticsIntent analyticsIntent =
+
+                aiAnalyticsService
+
+                        .understandQuestion(
+
+                                request.getQuestion()
+
+                        );
+        System.out.println(
+                "AI GENERATED INTENT: "
+                        + analyticsIntent.getIntent()
+                        + " | "
+                        + analyticsIntent.getEntity()
+                        + " | "
+                        + analyticsIntent.getMetric()
+        );
+
+
+
+        // 2. Convert AI intent into existing analytics request
 
         AIAnalyticsRequest intent =
-                aiAnalyticsService
-                        .understandQuestion(
-                                request.getQuestion()
+
+                intentRouterService
+
+                        .route(
+
+                                analyticsIntent
+
                         );
 
 
 
-        // 2. Validate intent
+
+
+        // 3. Validate analytics request
 
         AIAnalyticsRequest validatedRequest =
+
                 validatorService
-                        .validate(intent);
+
+                        .validate(
+
+                                intent
+
+                        );
 
 
 
-        // 3. Execute analytics
+
+
+
+        // 4. Execute analytics query
 
         Object analyticsData =
+
                 executorService
-                        .execute(validatedRequest);
+
+                        .execute(
+
+                                validatedRequest
+
+                        );
+
 
 
 
@@ -105,12 +172,20 @@ public class AIController {
 
 
 
-        // 4. Business Insight Layer
+
+
+
+
+        // 5. Business Insight Layer
 
         if(validatedRequest.getDimension()
+
                 .equalsIgnoreCase("customer")
+
                 &&
+
                 validatedRequest.getOperation()
+
                         .equalsIgnoreCase("top")) {
 
 
@@ -118,32 +193,53 @@ public class AIController {
             try {
 
 
+
                 List<TopCustomerDTO> customers =
+
+
                         objectMapper.convertValue(
+
                                 analyticsData,
+
                                 new TypeReference<List<TopCustomerDTO>>() {}
+
                         );
 
 
 
+
                 BusinessInsightData insightData =
+
+
                         businessInsightService
+
                                 .analyzeTopCustomers(
+
                                         customers
+
                                 );
+
+
 
 
                 finalData = insightData;
 
 
+
             }
-            catch(Exception e){
+
+            catch(Exception e) {
+
 
 
                 throw new RuntimeException(
+
                         "Customer insight conversion failed: "
+
                                 + e.getMessage()
+
                 );
+
 
             }
 
@@ -152,12 +248,19 @@ public class AIController {
 
 
 
-        // 5. AI Explanation
+
+
+
+        // 6. Generate AI Business Explanation
 
         return explanationService
+
                 .generateExplanation(
+
                         request.getQuestion(),
+
                         finalData
+
                 );
 
     }
@@ -166,11 +269,15 @@ public class AIController {
 
 
 
+
+
     @GetMapping("/health")
+
     public String health(){
 
         return "AI Analytics Platform Running";
 
     }
+
 
 }
