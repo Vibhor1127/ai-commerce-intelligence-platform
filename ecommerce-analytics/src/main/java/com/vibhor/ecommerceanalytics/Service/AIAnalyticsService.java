@@ -23,12 +23,16 @@ public class AIAnalyticsService {
             ChatClient.Builder chatClientBuilder
     ) {
 
+
         this.chatClient =
                 chatClientBuilder.build();
 
+
         this.objectMapper =
                 new ObjectMapper();
+
     }
+
 
 
 
@@ -39,160 +43,261 @@ public class AIAnalyticsService {
     ) {
 
 
+
         String prompt = """
 
-                You are an AI Business Intelligence
-                intent classifier for an e-commerce platform.
+        You are an AI Business Intelligence Analyst
+        for an e-commerce analytics platform.
 
-                Your task:
+        Your job is NOT to answer the question.
 
-                Understand the user's business question
-                and convert it into a structured intent.
+        Your job is to understand the business intent
+        behind the user's question and classify it.
 
-                Return ONLY valid JSON.
 
-                Do not add:
-                - markdown
-                - explanations
-                - comments
+        Return ONLY valid JSON.
 
+        Do not return:
+        - markdown
+        - explanations
+        - extra text
 
-                JSON FORMAT:
 
-                {
-                  "intent":"",
-                  "entity":"",
-                  "metric":"",
-                  "limit":10
-                }
 
+        JSON FORMAT:
 
 
-                SUPPORTED INTENTS:
+        {
+          "intent":"",
+          "entity":"",
+          "metric":"",
+          "operation":"",
+          "limit":10,
+          "confidence":0.0
+        }
 
 
-                Customer Analytics:
 
-                TOP_CUSTOMERS
-                CUSTOMER_VALUE
-                INACTIVE_CUSTOMERS
+        AVAILABLE BUSINESS INTENTS:
 
 
-                Product Analytics:
 
-                TOP_PRODUCTS
-                LOW_PERFORMING_PRODUCTS
+        CUSTOMER ANALYTICS:
 
 
-                Revenue Analytics:
+        TOP_CUSTOMERS
 
-                REVENUE_SUMMARY
-                REVENUE_TREND
+        Meaning:
+        Find highest value customers based on spending/revenue.
 
 
-                Inventory Analytics:
+        Examples:
 
-                INVENTORY_SUMMARY
-                LOW_STOCK_PRODUCTS
+        "Who are my biggest buyers?"
 
+        "Who spends the most?"
 
+        "Show VIP customers"
 
-                EXAMPLES:
+        "Which customers generate maximum revenue?"
 
 
 
-                Question:
-                Who are my biggest buyers?
 
+        INACTIVE_CUSTOMERS
 
-                Output:
+        Meaning:
+        Find customers who stopped purchasing.
 
-                {
-                  "intent":"TOP_CUSTOMERS",
-                  "entity":"CUSTOMER",
-                  "metric":"TOTAL_SPENDING",
-                  "limit":10
-                }
 
+        Examples:
 
+        "Which customers stopped buying?"
 
+        "Who has not ordered recently?"
 
-                Question:
-                Show customers who stopped purchasing
+        "Show inactive customers"
 
 
-                Output:
 
-                {
-                  "intent":"INACTIVE_CUSTOMERS",
-                  "entity":"CUSTOMER",
-                  "metric":"LAST_ORDER_DATE",
-                  "limit":null
-                }
 
 
 
+        PRODUCT ANALYTICS:
 
 
-                Question:
-                Which products generate the most revenue?
+        TOP_PRODUCTS
 
+        Meaning:
+        Find best performing products.
 
-                Output:
 
-                {
-                  "intent":"TOP_PRODUCTS",
-                  "entity":"PRODUCT",
-                  "metric":"REVENUE",
-                  "limit":10
-                }
+        Examples:
 
+        "Which products sell the most?"
 
+        "Show highest revenue products"
 
+        "What are my best sellers?"
 
 
-                Question:
-                Which products need restocking?
 
 
-                Output:
 
-                {
-                  "intent":"LOW_STOCK_PRODUCTS",
-                  "entity":"INVENTORY",
-                  "metric":"STOCK_LEVEL",
-                  "limit":10
-                }
+        LOW_PERFORMING_PRODUCTS
 
+        Meaning:
+        Find products with poor performance.
 
 
+        Examples:
 
+        "Which products are not selling?"
 
-                If the question is unrelated:
+        "Show weak products"
 
-                {
-                  "intent":"UNKNOWN",
-                  "entity":"UNKNOWN",
-                  "metric":"UNKNOWN",
-                  "limit":null
-                }
 
 
 
-                User Question:
 
-                %s
 
+        REVENUE ANALYTICS:
 
-                """.formatted(question);
+
+        REVENUE_SUMMARY
+
+        Meaning:
+        Overall revenue/business summary.
+
+
+        Examples:
+
+        "Give me revenue overview"
+
+        "How is my business performing?"
+
+
+
+
+
+        REVENUE_TREND
+
+        Meaning:
+        Revenue change over time.
+
+
+        Examples:
+
+        "Show monthly revenue trend"
+
+        "Is revenue growing?"
+
+        "Show sales growth"
+
+
+
+
+
+
+        INVENTORY ANALYTICS:
+
+
+        LOW_STOCK_PRODUCTS
+
+        Meaning:
+        Find products requiring inventory attention.
+
+
+        Examples:
+
+        "Which products need restocking?"
+
+        "What inventory is low?"
+
+
+
+
+
+
+        INVENTORY_SUMMARY
+
+        Meaning:
+        Overall inventory status.
+
+
+
+
+
+
+        UNKNOWN:
+
+
+        If the question is unrelated
+        to e-commerce analytics.
+
+        Return:
+
+
+        {
+          "intent":"UNKNOWN",
+          "entity":"UNKNOWN",
+          "metric":"UNKNOWN",
+          "operation":"UNKNOWN",
+          "limit":null,
+          "confidence":0.0
+        }
+
+
+
+
+
+
+        IMPORTANT RULES:
+
+
+        1. Understand meaning, not keywords.
+
+        Example:
+
+        "Who should I focus on retaining?"
+
+        Means:
+
+        INACTIVE_CUSTOMERS
+
+
+        2. Never create new intents.
+
+        3. Confidence:
+           0.90+ = clear understanding
+           0.60-0.90 = reasonable
+           below 0.60 = uncertain
+
+
+
+        USER QUESTION:
+
+
+        %s
+
+
+        """.formatted(question);
+
+
 
 
 
         String aiResponse =
+
                 chatClient
+
                         .prompt(prompt)
+
                         .call()
+
                         .content();
+
+
 
 
 
@@ -200,27 +305,29 @@ public class AIAnalyticsService {
 
 
             String cleanedResponse =
+
                     aiResponse
+
                             .replace("```json", "")
+
                             .replace("```", "")
+
                             .trim();
 
 
 
+
             AnalyticsIntent intent =
+
                     objectMapper.readValue(
+
                             cleanedResponse,
+
                             AnalyticsIntent.class
+
                     );
 
 
-
-            if(intent.getIntent()==null) {
-
-                throw new RuntimeException(
-                        "Intent missing from AI response"
-                );
-            }
 
 
             return intent;
@@ -228,13 +335,17 @@ public class AIAnalyticsService {
 
 
         }
-        catch(Exception e) {
+        catch(Exception e){
 
 
             throw new RuntimeException(
-                    "AI intent parsing failed. Raw response: "
+
+                    "Failed to parse AI intent. Raw response: "
+
                             + aiResponse,
+
                     e
+
             );
 
         }

@@ -3,7 +3,7 @@ package com.vibhor.ecommerceanalytics.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vibhor.ecommerceanalytics.DTO.AIExplanationResponse;
-
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
@@ -18,16 +18,16 @@ public class AIExplanationService {
     private final ObjectMapper objectMapper;
 
 
+    public AIExplanationService(ChatClient.Builder builder) {
 
-    public AIExplanationService(
-            ChatClient.Builder chatClientBuilder) {
+        this.chatClient = builder.build();
 
+        this.objectMapper = new ObjectMapper();
 
-        this.chatClient =
-                chatClientBuilder.build();
+        this.objectMapper.registerModule(
+                new JavaTimeModule()
+        );
 
-        this.objectMapper =
-                new ObjectMapper();
     }
 
 
