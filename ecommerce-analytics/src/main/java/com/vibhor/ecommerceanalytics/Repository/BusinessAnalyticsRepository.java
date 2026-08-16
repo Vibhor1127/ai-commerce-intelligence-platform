@@ -50,6 +50,31 @@ public interface BusinessAnalyticsRepository
 
 
     // ============================================================
+    // LOW PERFORMING PRODUCTS
+    // Same shape as TOP PRODUCTS, sorted ascending instead of descending,
+    // limited to products that actually have order history (so a brand
+    // new product with zero sales doesn't drown out genuinely weak ones --
+    // adjust/remove the HAVING clause if you want zero-sale products included).
+    // ============================================================
+
+    @Query(value = """
+        SELECT
+            p.product_id AS productId,
+            p.product_name AS productName,
+            SUM(oi.quantity) AS Quantity,
+            SUM(oi.quantity * oi.price) AS Revenue
+        FROM products p
+        JOIN order_items oi
+            ON p.product_id = oi.product_id
+        GROUP BY p.product_id, p.product_name
+        HAVING SUM(oi.quantity) > 0
+        ORDER BY Revenue ASC
+        LIMIT 10
+        """, nativeQuery = true)
+    List<TopProductsDTO> getLowPerformingProducts();
+
+
+    // ============================================================
     // MONTHLY REVENUE
     // ============================================================
 

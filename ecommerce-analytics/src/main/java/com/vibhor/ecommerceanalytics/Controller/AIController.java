@@ -1,283 +1,86 @@
 package com.vibhor.ecommerceanalytics.Controller;
 
+import com.vibhor.ecommerceanalytics.Service.Handler.AnalyticsCapability;
+import com.vibhor.ecommerceanalytics.Service.Handler.CapabilityRegistry;
+import com.vibhor.ecommerceanalytics.Service.Handler.ValidationResult;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import com.vibhor.ecommerceanalytics.DTO.AIAnalyticsRequest;
 import com.vibhor.ecommerceanalytics.DTO.AIExplanationResponse;
 import com.vibhor.ecommerceanalytics.DTO.AIQuestionRequest;
 import com.vibhor.ecommerceanalytics.DTO.AnalyticsIntent;
-import com.vibhor.ecommerceanalytics.DTO.BusinessInsightData;
-import com.vibhor.ecommerceanalytics.DTO.TopCustomerDTO;
 
-
-import com.vibhor.ecommerceanalytics.Service.AIAnalyticsExecutorService;
 import com.vibhor.ecommerceanalytics.Service.AIAnalyticsService;
-import com.vibhor.ecommerceanalytics.Service.AIAnalyticsValidatorService;
 import com.vibhor.ecommerceanalytics.Service.AIExplanationService;
-import com.vibhor.ecommerceanalytics.Service.BusinessInsightService;
-import com.vibhor.ecommerceanalytics.Service.IntentRouterService;
-
 
 import org.springframework.web.bind.annotation.*;
 
-
-import java.util.List;
-
-
+import java.util.Collections;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/ai")
 public class AIController {
 
-
+    private static final double MIN_CONFIDENCE_TO_EXECUTE = 0.5;
 
     private final AIAnalyticsService aiAnalyticsService;
-
-    private final IntentRouterService intentRouterService;
-
-    private final AIAnalyticsValidatorService validatorService;
-
-    private final AIAnalyticsExecutorService executorService;
-
+    private final CapabilityRegistry capabilityRegistry;
     private final AIExplanationService explanationService;
 
-    private final BusinessInsightService businessInsightService;
-
-    private final ObjectMapper objectMapper;
-
-
-
-
     public AIController(
-
             AIAnalyticsService aiAnalyticsService,
-
-            IntentRouterService intentRouterService,
-
-            AIAnalyticsValidatorService validatorService,
-
-            AIAnalyticsExecutorService executorService,
-
-            AIExplanationService explanationService,
-
-            BusinessInsightService businessInsightService
-
+            CapabilityRegistry capabilityRegistry,
+            AIExplanationService explanationService
     ) {
-
-
         this.aiAnalyticsService = aiAnalyticsService;
-
-        this.intentRouterService = intentRouterService;
-
-        this.validatorService = validatorService;
-
-        this.executorService = executorService;
-
+        this.capabilityRegistry = capabilityRegistry;
         this.explanationService = explanationService;
-
-        this.businessInsightService = businessInsightService;
-
-        this.objectMapper = new ObjectMapper();
-
     }
-
-
-
-
-
-
 
     @PostMapping("/ask")
-    public AIExplanationResponse askQuestion(
-
-            @RequestBody AIQuestionRequest request
-
-    ) {
-
-
-
-        // 1. Understand user question using AI Intent Layer
-
-        AnalyticsIntent analyticsIntent =
-
-                aiAnalyticsService
-
-                        .understandQuestion(
-
-                                request.getQuestion()
-
-                        );
-        System.out.println(
-                "AI GENERATED INTENT: "
-                        + analyticsIntent.getIntent()
-                        + " | "
-                        + analyticsIntent.getEntity()
-                        + " | "
-                        + analyticsIntent.getMetric()
-        );
-
-
-
-        // 2. Convert AI intent into existing analytics request
-
-        AIAnalyticsRequest intent =
-
-                intentRouterService
-
-                        .route(
-
-                                analyticsIntent
-
-                        );
-
-
-
-
-
-        // 3. Validate analytics request
-
-        AIAnalyticsRequest validatedRequest =
-
-                validatorService
-
-                        .validate(
-
-                                intent
-
-                        );
-
-
-
-
-
-
-        // 4. Execute analytics query
-
-        Object analyticsData =
-
-                executorService
-
-                        .execute(
-
-                                validatedRequest
-
-                        );
-
-
-
-
-        Object finalData = analyticsData;
-
-
-
-
-
-
-
-        // 5. Business Insight Layer
-
-        if(validatedRequest.getDimension()
-
-                .equalsIgnoreCase("customer")
-
-                &&
-
-                validatedRequest.getOperation()
-
-                        .equalsIgnoreCase("top")) {
-
-
-
-            try {
-
-
-
-                List<TopCustomerDTO> customers =
-
-
-                        objectMapper.convertValue(
-
-                                analyticsData,
-
-                                new TypeReference<List<TopCustomerDTO>>() {}
-
-                        );
-
-
-
-
-                BusinessInsightData insightData =
-
-
-                        businessInsightService
-
-                                .analyzeTopCustomers(
-
-                                        customers
-
-                                );
-
-
-
-
-                finalData = insightData;
-
-
-
-            }
-
-            catch(Exception e) {
-
-
-
-                throw new RuntimeException(
-
-                        "Customer insight conversion failed: "
-
-                                + e.getMessage()
-
-                );
-
-
-            }
-
+    public AIExplanationResponse askQuestion(@RequestBody AIQuestionRequest request) {
+
+        AnalyticsIntent intent = aiAnalyticsService.understandQuestion(request.getQuestion());
+
+        double confidence = intent.getConfidence() == null ? 0.0 : intent.getConfidence();
+        if (confidence < MIN_CONFIDENCE_TO_EXECUTE || "UNKNOWN".equalsIgnoreCase(intent.getEntity())) {
+            return unsupportedResponse(
+                    "I'm not confident I understood that as a business analytics question. "
+                            + "Could you rephrase it around one of these areas?"
+            );
         }
 
+        Optional<AnalyticsCapability> capability = capabilityRegistry.resolve(intent.getEntity());
+        if (capability.isEmpty()) {
+            return unsupportedResponse(
+                    "I can't answer questions about \"" + intent.getEntity()
+                            + "\" yet. Here's what I can currently help with:"
+            );
+        }
 
+        ValidationResult validation = capability.get().validate(intent);
+        if (!validation.isValid()) {
+            return unsupportedResponse(validation.getMessage());
+        }
 
+        Object analyticsData = capability.get().execute(intent);
 
-
-
-
-        // 6. Generate AI Business Explanation
-
-        return explanationService
-
-                .generateExplanation(
-
-                        request.getQuestion(),
-
-                        finalData
-
-                );
-
+        return explanationService.generateExplanation(request.getQuestion(), analyticsData);
     }
 
-
-
-
-
-
+    private AIExplanationResponse unsupportedResponse(String reason) {
+        return new AIExplanationResponse(
+                "I can't fully answer that yet.",
+                reason,
+                Collections.singletonList(
+                        "Supported topics right now: " + capabilityRegistry.supportedEntities()
+                ),
+                Collections.emptyList(),
+                null
+        );
+    }
 
     @GetMapping("/health")
-
-    public String health(){
-
+    public String health() {
         return "AI Analytics Platform Running";
-
     }
-
-
 }

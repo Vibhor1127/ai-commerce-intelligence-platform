@@ -27,6 +27,12 @@ public class BusinessAnalyticsService {
     }
 
 
+    public List<TopProductsDTO> getLowPerformingProducts() {
+
+        return businessAnalyticsRepository.getLowPerformingProducts();
+    }
+
+
     public List<MonthlyRevenueDTO> getMonthlyRevenue() {
 
         return businessAnalyticsRepository.getMonthlyRevenue();
