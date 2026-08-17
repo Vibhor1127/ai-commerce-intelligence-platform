@@ -2,8 +2,14 @@ package com.vibhor.ecommerceanalytics.Service;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vibhor.ecommerceanalytics.DTO.AIExplanationResponse;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import com.vibhor.ecommerceanalytics.DTO.AIExplanationResponse;
+import com.vibhor.ecommerceanalytics.Exception.InvalidAIResponseException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
@@ -13,16 +19,32 @@ import org.springframework.stereotype.Service;
 public class AIExplanationService {
 
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(
+                    AIExplanationService.class
+            );
+
+
+
     private final ChatClient chatClient;
 
     private final ObjectMapper objectMapper;
 
 
-    public AIExplanationService(ChatClient.Builder builder) {
 
-        this.chatClient = builder.build();
 
-        this.objectMapper = new ObjectMapper();
+    public AIExplanationService(
+            ChatClient.Builder builder
+    ) {
+
+
+        this.chatClient =
+                builder.build();
+
+
+        this.objectMapper =
+                new ObjectMapper();
+
 
         this.objectMapper.registerModule(
                 new JavaTimeModule()
@@ -34,27 +56,15 @@ public class AIExplanationService {
 
 
 
+
     public AIExplanationResponse generateExplanation(
             String question,
-            Object analyticsData) {
+            Object analyticsData
+    ) {
 
 
         try {
 
-
-            /*
-             * Convert Java Object into JSON
-             *
-             * Before:
-             * BusinessInsightData@3413f9
-             *
-             * After:
-             * {
-             *   analyticsData:[],
-             *   primaryMetric:"",
-             *   observation:""
-             * }
-             */
 
             String jsonData =
                     objectMapper.writeValueAsString(
@@ -63,68 +73,148 @@ public class AIExplanationService {
 
 
 
+            String prompt = """
+
+                    You are a Senior Business Intelligence Analyst
+                    for an E-Commerce Analytics Platform.
+
+
+                    Your task is to convert verified analytics
+                    data into business insights.
+
+
+                    IMPORTANT RULES:
+
+
+                    - Use ONLY the provided analytics data.
+                    - Do NOT use external knowledge.
+                    - Do NOT invent numbers.
+                    - Do NOT invent customer/product behaviour.
+                    - Do NOT assume missing information.
+
+
+                    Return ONLY valid JSON.
+
+
+                    Do not return:
+                    - markdown
+                    - ```json
+                    - explanations outside JSON
+
+
+
+                    RESPONSE FORMAT:
+
+
+                    {
+                      "answer":"",
+                      "reason":"",
+                      "observations":[],
+                      "recommendations":[]
+                    }
+
+
+
+                    NUMBER RULES:
+
+
+                    If you mention:
+
+                    - percentages
+                    - comparisons
+                    - ratios
+                    - growth
+
+
+                    You must explain the calculation
+                    using available values.
+
+
+
+                    Example:
+
+
+                    Good:
+
+                    "Top customers contributed ₹264997
+                    out of ₹297994 total spending."
+
+
+                    Bad:
+
+                    "Top customers contributed 89%."
+
+
+
+                    DATA LIMITATION RULE:
+
+
+                    If analytics data is empty or insufficient:
+
+                    Clearly mention that more data is required.
+
+
+
+                    BUSINESS RECOMMENDATION RULE:
+
+
+                    Recommendations must be practical
+                    actions for an e-commerce business.
+
+
+
+
+                    USER QUESTION:
+
+
+                    """
+                    + question +
+                    """
+
+
+                    VERIFIED ANALYTICS DATA:
+
+
+                    """
+                    + jsonData;
+
+
+
             String aiResponse =
                     chatClient
-                            .prompt("""
-
-                            You are a senior Business Intelligence Analyst
-                            for an e-commerce analytics platform.
-
-                            Analyze ONLY the verified analytics data.
-
-                            Return ONLY valid JSON.
-
-                            Do not use markdown.
-                            Do not add ```json.
-                            
-                            Response format:
-
-                            {
-                              "answer":"",
-                              "reason":"",
-                              "observations":[],
-                              "recommendations":[]
-                            }
-
-
-                            Rules:
-
-                            - Use only provided data.
-                            - Do not invent numbers.
-                            - Do not create unsupported facts.
-                            - Explain business impact.
-                            - Recommendations should be practical
-                              business actions.
-
-
-                            User Question:
-
-                            %s
-
-
-                            Verified Analytics Data:
-
-                            %s
-
-
-                            """.formatted(
-                                    question,
-                                    jsonData
-                            ))
+                            .prompt(prompt)
                             .call()
                             .content();
 
 
+            if (aiResponse == null || aiResponse.isBlank()) {
 
-            /*
-             * Remove accidental markdown
-             */
+                throw new InvalidAIResponseException(
+                        "AI returned empty response"
+                );
+
+            }
+
 
             String cleanedResponse =
                     aiResponse
                             .replace("```json", "")
                             .replace("```", "")
                             .trim();
+
+
+
+
+
+
+
+
+
+            logger.info(
+                    "AI Explanation Raw Response: {}",
+                    cleanedResponse
+            );
+
 
 
 
@@ -137,9 +227,7 @@ public class AIExplanationService {
 
 
 
-            /*
-             * Attach original database evidence
-             */
+
 
             return new AIExplanationResponse(
 
@@ -160,14 +248,20 @@ public class AIExplanationService {
         catch(Exception e) {
 
 
-            throw new RuntimeException(
-                    "AI explanation generation failed: "
-                            + e.getMessage(),
+            logger.error(
+                    "AI explanation generation failed",
                     e
+            );
+
+
+            throw new InvalidAIResponseException(
+                    "Unable to generate AI explanation"
             );
 
         }
 
+
     }
+
 
 }

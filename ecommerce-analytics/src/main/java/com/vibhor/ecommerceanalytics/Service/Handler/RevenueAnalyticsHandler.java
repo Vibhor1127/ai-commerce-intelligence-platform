@@ -27,7 +27,35 @@ public class RevenueAnalyticsHandler implements AnalyticsCapability {
     public ValidationResult validate(AnalyticsIntent intent) {
         return ValidationResult.ok();
     }
+    @Override
+    public boolean supports(AnalyticsIntent intent){
 
+
+        String metric =
+                intent.getMetric()==null
+                        ? ""
+                        : intent.getMetric()
+                        .toLowerCase();
+
+
+        String operation =
+                intent.getOperation()==null
+                        ? ""
+                        : intent.getOperation()
+                        .toLowerCase();
+
+
+
+        return
+                metric.contains("revenue")
+                        ||
+                        metric.contains("growth")
+                        ||
+                        operation.contains("trend")
+                        ||
+                        operation.contains("summary");
+
+    }
     @Override
     public Object execute(AnalyticsIntent intent) {
         String operation = intent.getOperation() == null

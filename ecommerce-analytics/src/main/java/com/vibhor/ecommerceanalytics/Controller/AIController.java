@@ -133,9 +133,7 @@ public class AIController {
 
 
         Optional<AnalyticsCapability> capability =
-                capabilityRegistry.resolve(
-                        intent.getEntity()
-                );
+                capabilityRegistry.resolve(intent);
 
 
 

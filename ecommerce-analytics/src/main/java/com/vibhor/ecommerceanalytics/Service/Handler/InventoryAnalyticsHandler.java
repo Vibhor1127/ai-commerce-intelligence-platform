@@ -27,6 +27,34 @@ public class InventoryAnalyticsHandler implements AnalyticsCapability {
     public ValidationResult validate(AnalyticsIntent intent) {
         return ValidationResult.ok();
     }
+    @Override
+    public boolean supports(AnalyticsIntent intent){
+
+
+        String metric =
+                intent.getMetric()==null
+                        ? ""
+                        : intent.getMetric()
+                        .toLowerCase();
+
+
+
+        String operation =
+                intent.getOperation()==null
+                        ? ""
+                        : intent.getOperation()
+                        .toLowerCase();
+
+
+
+        return
+                metric.contains("stock")
+                        ||
+                        metric.contains("inventory")
+                        ||
+                        operation.contains("alert");
+
+    }
 
     @Override
     public Object execute(AnalyticsIntent intent) {

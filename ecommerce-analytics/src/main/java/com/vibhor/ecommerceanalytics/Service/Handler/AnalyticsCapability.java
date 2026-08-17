@@ -24,6 +24,20 @@ public interface AnalyticsCapability {
     String supportedEntity();
 
     /**
+     * Checks whether this capability
+     * can handle this specific intent.
+     *
+     * Example:
+     *
+     * CUSTOMER + RANK_TOP  -> true
+     *
+     * CUSTOMER + CHURN_RISK -> true
+     *
+     * CUSTOMER + SENTIMENT -> false
+     */
+    boolean supports(AnalyticsIntent intent);
+
+    /**
      * Business-level validation for this domain (permissions, supported
      * operations, required fields). Structural validation (is entity present,
      * is confidence present) already happened before this is called.

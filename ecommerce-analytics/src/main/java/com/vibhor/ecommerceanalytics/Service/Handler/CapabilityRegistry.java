@@ -1,5 +1,7 @@
 package com.vibhor.ecommerceanalytics.Service.Handler;
 
+
+import com.vibhor.ecommerceanalytics.DTO.AnalyticsIntent;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -7,41 +9,80 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * Spring injects every AnalyticsCapability bean here automatically --
- * this is what makes new capabilities "plug in" instead of requiring
- * you to edit a switch statement (IntentRouterService) and an if-chain
- * (AIAnalyticsValidatorService, AIAnalyticsExecutorService) every time.
- *
- * To add Shipment analytics tomorrow: write ShipmentAnalyticsHandler
- * implements AnalyticsCapability, annotate it @Component, done.
- * This class never changes.
- */
+
 @Component
 public class CapabilityRegistry {
 
-    private final Map<String, AnalyticsCapability> capabilitiesByEntity;
 
-    public CapabilityRegistry(List<AnalyticsCapability> capabilities) {
-        this.capabilitiesByEntity = capabilities.stream()
-                .collect(Collectors.toMap(
-                        c -> c.supportedEntity().toUpperCase(),
-                        c -> c
-                ));
+    private final Map<String, List<AnalyticsCapability>> capabilities;
+
+
+
+    public CapabilityRegistry(
+            List<AnalyticsCapability> capabilityList
+    ){
+
+
+        this.capabilities =
+                capabilityList
+                        .stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        c -> c.supportedEntity()
+                                                .toUpperCase()
+                                )
+                        );
+
     }
 
-    public Optional<AnalyticsCapability> resolve(String entity) {
-        if (entity == null) {
+
+
+
+
+    public Optional<AnalyticsCapability> resolve(
+            AnalyticsIntent intent
+    ){
+
+
+        if(intent.getEntity()==null){
             return Optional.empty();
         }
-        return Optional.ofNullable(capabilitiesByEntity.get(entity.toUpperCase()));
+
+
+
+        List<AnalyticsCapability> handlers =
+                capabilities.get(
+                        intent.getEntity()
+                                .toUpperCase()
+                );
+
+
+
+        if(handlers==null){
+            return Optional.empty();
+        }
+
+
+
+        return handlers
+                .stream()
+                .filter(
+                        h -> h.supports(intent)
+                )
+                .findFirst();
+
     }
 
-    /**
-     * Used for the "I can't answer that yet, but here's what I can do"
-     * fallback response instead of a hard error.
-     */
-    public List<String> supportedEntities() {
-        return List.copyOf(capabilitiesByEntity.keySet());
+
+
+
+
+    public List<String> supportedEntities(){
+
+        return List.copyOf(
+                capabilities.keySet()
+        );
+
     }
+
 }

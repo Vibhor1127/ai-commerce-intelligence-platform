@@ -17,7 +17,35 @@ public class ProductAnalyticsHandler implements AnalyticsCapability {
     public String supportedEntity() {
         return "PRODUCT";
     }
+    @Override
+    public boolean supports(AnalyticsIntent intent){
 
+
+        String metric =
+                intent.getMetric()==null
+                        ? ""
+                        : intent.getMetric()
+                        .toLowerCase();
+
+
+        String operation =
+                intent.getOperation()==null
+                        ? ""
+                        : intent.getOperation()
+                        .toLowerCase();
+
+
+
+        return
+                metric.contains("sales")
+                        ||
+                        metric.contains("performance")
+                        ||
+                        operation.contains("rank")
+                        ||
+                        operation.contains("bottom");
+
+    }
     @Override
     public ValidationResult validate(AnalyticsIntent intent) {
         return ValidationResult.ok();

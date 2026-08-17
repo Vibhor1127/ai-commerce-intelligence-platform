@@ -35,6 +35,37 @@ public class CustomerAnalyticsHandler implements AnalyticsCapability {
     public ValidationResult validate(AnalyticsIntent intent) {
         return ValidationResult.ok();
     }
+    @Override
+    public boolean supports(AnalyticsIntent intent){
+
+
+        String metric =
+                intent.getMetric()==null
+                        ? ""
+                        : intent.getMetric()
+                        .toLowerCase();
+
+
+        String operation =
+                intent.getOperation()==null
+                        ? ""
+                        : intent.getOperation()
+                        .toLowerCase();
+
+
+
+        return
+                metric.contains("spending")
+                        ||
+                        metric.contains("lifetime")
+                        ||
+                        metric.contains("churn")
+                        ||
+                        operation.contains("rank")
+                        ||
+                        operation.contains("filter");
+
+    }
 
     @Override
     public Object execute(AnalyticsIntent intent) {
