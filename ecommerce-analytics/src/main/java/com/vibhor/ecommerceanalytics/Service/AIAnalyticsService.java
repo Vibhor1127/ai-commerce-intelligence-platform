@@ -2,7 +2,10 @@ package com.vibhor.ecommerceanalytics.Service;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.vibhor.ecommerceanalytics.DTO.AnalyticsIntent;
+import com.vibhor.ecommerceanalytics.Exception.InvalidAIResponseException;
+
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
@@ -77,141 +80,38 @@ public class AIAnalyticsService {
 
         FIELD RULES:
 
-        entity MUST be exactly one of these values (uppercase, singular).
-        Never use plural or lowercase forms. Never invent a new entity value.
+        entity MUST be exactly one of:
 
         CUSTOMER
         PRODUCT
         REVENUE
         INVENTORY
+        UNKNOWN
 
 
-        metric describes WHAT is being measured, in your own words,
-        as a short snake_case label.
+        metric describes WHAT is measured.
 
-        Examples:
-        total_spending, sales_performance, churn_risk, stock_level,
-        revenue_growth
+        operation describes the requested analysis type.
 
 
-        operation describes the KIND of analysis being requested,
-        in your own words, as a short snake_case or UPPERCASE label.
+        filters captures extra conditions.
 
-        Examples:
-        top, low_performing, inactive, trend, summary, alert
+        timeframe captures date scope.
 
 
-        filters is a JSON object capturing any extra conditions mentioned
-        in the question (region, category, time-bounded segment, etc).
-        Use {} if none are mentioned.
 
+        NEVER force-map unsupported domains.
 
-        timeframe captures any date/time scope mentioned
-        ("last quarter", "this month"). Use null if not mentioned.
+        Unsupported examples:
 
+        - shipments
+        - reviews
+        - payments
+        - employees
+        - marketing
 
 
-        AVAILABLE BUSINESS CAPABILITIES:
-
-
-
-        CUSTOMER:
-
-        Meaning:
-        Anything about customers -- highest value customers, VIPs,
-        customers at risk of leaving/churning, customer lifetime value.
-
-        Examples:
-
-        "Who are my biggest buyers?"
-
-        "Who spends the most?"
-
-        "Show VIP customers"
-
-        "Which customers generate maximum revenue?"
-
-        "Which customers stopped buying?"
-
-        "Who has not ordered recently?"
-
-        "Who should we focus on retaining?"
-
-        "Which customers are worth protecting?"
-
-
-
-
-        PRODUCT:
-
-        Meaning:
-        Anything about products -- best sellers, weak/low performing
-        products.
-
-        Examples:
-
-        "Which products sell the most?"
-
-        "Show highest revenue products"
-
-        "What are my best sellers?"
-
-        "Which products are not selling?"
-
-        "Show weak products"
-
-        "Which products are performing poorly?"
-
-
-
-
-        REVENUE:
-
-        Meaning:
-        Anything about overall revenue, category revenue, or revenue
-        trends over time.
-
-        Examples:
-
-        "Give me revenue overview"
-
-        "How is my business performing?"
-
-        "Show monthly revenue trend"
-
-        "Is revenue growing?"
-
-        "Show sales growth"
-
-        "Why is revenue changing?"
-
-
-
-
-        INVENTORY:
-
-        Meaning:
-        Anything about stock levels, restocking, inventory health.
-
-        Examples:
-
-        "Which products need restocking?"
-
-        "What inventory is low?"
-
-        "Where should I invest my inventory budget?"
-
-
-
-
-        UNKNOWN:
-
-        If the question is completely unrelated to ecommerce
-        business analytics (small talk, coding help, general
-        knowledge, etc), OR if it asks about a domain we do not
-        support (shipments, reviews, payments, staff, marketing
-        campaigns, or anything else not listed above), return:
-
+        For unsupported questions return:
 
         {
           "entity":"UNKNOWN",
@@ -223,124 +123,67 @@ public class AIAnalyticsService {
         }
 
 
+        IMPORTANT EVIDENCE RULE:
 
+        Never invent:
 
-        IMPORTANT RULES:
+        - percentages
+        - thresholds
+        - business benchmarks
+        - unsupported calculations
 
-
-        1. Understand meaning, not keywords.
-
-        Example:
-
-        "Who should I focus on retaining?"
-
-        Means:
-
-        entity: CUSTOMER, operation relates to churn/retention risk.
-
-
-        2. Never refuse to classify a business-sounding question that
-        genuinely fits CUSTOMER, PRODUCT, REVENUE, or INVENTORY. Even an
-        unusual or oddly-phrased question must be mapped to your best-guess
-        entity/metric/operation within those four. Lower the confidence
-        score instead of refusing.
-
-        3. Never output an entity outside CUSTOMER, PRODUCT, REVENUE,
-        INVENTORY, or UNKNOWN.
-
-        4. If the question is about something we do NOT support -- for
-        example shipments, reviews, payments, staff, marketing, or
-        anything else not covered by CUSTOMER, PRODUCT, REVENUE, or
-        INVENTORY -- you MUST return entity "UNKNOWN". Do NOT force-map
-        it onto the closest available entity just because one of the
-        four sounds vaguely related. Guessing the nearest entity for a
-        domain we don't support produces a confident-sounding wrong
-        answer, which is worse than honestly saying we don't support it
-        yet.
-
-        5. Confidence:
-           0.90+ = clear understanding
-           0.60-0.90 = reasonable
-           below 0.60 = uncertain
+        Only use available analytics evidence.
 
 
 
         USER QUESTION:
 
-
         %s
+
 
         """.formatted(question);
 
 
 
 
-
-        String aiResponse =
-
-                chatClient
-
-                        .prompt(prompt)
-
-                        .call()
-
-                        .content();
-
-
-
+        String aiResponse;
 
 
         try {
 
 
+            aiResponse =
+                    chatClient
+                            .prompt(prompt)
+                            .call()
+                            .content();
+
+
+
             String cleanedResponse =
-
                     aiResponse
-
                             .replace("```json", "")
-
                             .replace("```", "")
-
                             .trim();
 
 
 
-
-            AnalyticsIntent intent =
-
-                    objectMapper.readValue(
-
-                            cleanedResponse,
-
-                            AnalyticsIntent.class
-
-                    );
-
-
-
-
-            return intent;
-
+            return objectMapper.readValue(
+                    cleanedResponse,
+                    AnalyticsIntent.class
+            );
 
 
         }
         catch(Exception e){
 
 
-            throw new RuntimeException(
-
-                    "Failed to parse AI intent. Raw response: "
-
-                            + aiResponse,
-
-                    e
-
+            throw new InvalidAIResponseException(
+                    "Unable to parse AI generated analytics intent"
             );
 
         }
 
-
     }
-
 
 }
