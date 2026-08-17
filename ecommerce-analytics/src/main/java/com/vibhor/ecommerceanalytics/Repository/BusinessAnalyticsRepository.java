@@ -153,14 +153,21 @@ public interface BusinessAnalyticsRepository
     // ============================================================
 
     @Query(value = """
-        SELECT
-            product_id AS productId,
-            product_name AS productName,
-            stock AS stock
-        FROM products
-        WHERE stock <= 10
-        ORDER BY stock ASC
-        """, nativeQuery = true)
+    SELECT
+        p.product_id AS productId,
+        p.product_name AS productName,
+        i.stock_after AS stock
+    FROM products p
+    JOIN inventory_logs i
+        ON p.product_id = i.product_id
+    WHERE i.change_date = (
+        SELECT MAX(i2.change_date)
+        FROM inventory_logs i2
+        WHERE i2.product_id = i.product_id
+    )
+    AND i.stock_after <= 10
+    ORDER BY i.stock_after ASC
+    """, nativeQuery = true)
     List<InventoryAlertDTO> getInventoryAlerts();
 
 
