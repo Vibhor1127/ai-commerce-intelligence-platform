@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-void: #050816;
+    --color-panel: #0B1020;
+    --color-cyan: #00F5FF;
+    --color-violet: #8B5CF6;
+    --color-emerald: #10B981;
+    --color-amber: #F59E0B;
+    --color-ivory: #F4EFE6;
+    --color-bone: #C8D1DC;
+    --color-mute: #64748B;
+  }
+
+  body {
+    background-color: var(--color-void);
+    color: var(--color-bone);
+    font-family: 'Sora', sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+}
+
+.font-display {
+  font-family: 'Syne', sans-serif;
+}
+
+.font-mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.mono-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #64748B;
+}
+
+/* Holographic Panel */
+.holo-panel {
+  position: relative;
+  background: rgba(11, 16, 32, 0.7);
+  border: 1px solid rgba(244, 239, 230, 0.08);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.holo-edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 245, 255, 0.5), transparent);
+}
+
+/* Framed container with corner ticks */
+.frame {
+  position: relative;
+  background: rgba(11, 16, 32, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+.frame-ticks::before,
+.frame-ticks::after,
+.frame-ticks > i:nth-of-type(1),
+.frame-ticks > i:nth-of-type(2) {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-color: rgba(0, 245, 255, 0.4);
+  pointer-events: none;
+}
+
+.frame-ticks::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.frame-ticks::after {
+  top: -1px;
+  right: -1px;
+  border-top: 1px solid;
+  border-right: 1px solid;
+}
+
+.frame-ticks > i:nth-of-type(1) {
+  bottom: -1px;
+  left: -1px;
+  border-bottom: 1px solid;
+  border-left: 1px solid;
+}
+
+.frame-ticks > i:nth-of-type(2) {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+}
+
+@keyframes scanX {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+.scan-x {
+  animation: scanX 2s infinite linear;
+}
