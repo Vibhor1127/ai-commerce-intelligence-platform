@@ -3,6 +3,7 @@ package com.vibhor.ecommerceanalytics.Service.Handler;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vibhor.ecommerceanalytics.DTO.AnalyticsIntent;
+import com.vibhor.ecommerceanalytics.DTO.AnalyticsResult;
 import com.vibhor.ecommerceanalytics.DTO.TopCustomerDTO;
 import com.vibhor.ecommerceanalytics.Service.BusinessAnalyticsService;
 import com.vibhor.ecommerceanalytics.Service.BusinessInsightService;
@@ -32,67 +33,53 @@ public class CustomerAnalyticsHandler implements AnalyticsCapability {
     }
 
     @Override
+    public String description() {
+        return "Analyzes customer behavior including top spenders, "
+             + "customer lifetime value, and inactive/churning customers";
+    }
+
+    @Override
+    public List<String> supportedOperations() {
+        return List.of(
+                "TOP_CUSTOMERS",
+                "LIFETIME_VALUE",
+                "INACTIVE_CUSTOMERS"
+        );
+    }
+
+    @Override
     public ValidationResult validate(AnalyticsIntent intent) {
         return ValidationResult.ok();
     }
-    @Override
-    public boolean supports(AnalyticsIntent intent){
-
-
-        String metric =
-                intent.getMetric()==null
-                        ? ""
-                        : intent.getMetric()
-                        .toLowerCase();
-
-
-        String operation =
-                intent.getOperation()==null
-                        ? ""
-                        : intent.getOperation()
-                        .toLowerCase();
-
-
-
-        return
-                metric.contains("spending")
-                        ||
-                        metric.contains("lifetime")
-                        ||
-                        metric.contains("churn")
-                        ||
-                        operation.contains("rank")
-                        ||
-                        operation.contains("filter");
-
-    }
 
     @Override
-    public Object execute(AnalyticsIntent intent) {
+    public AnalyticsResult execute(AnalyticsIntent intent) {
         String operation = intent.getOperation() == null
-                ? "" : intent.getOperation().toUpperCase();
+                ? "TOP_CUSTOMERS" : intent.getOperation().toUpperCase();
 
-        if (operation.contains("INACTIVE")
-                || operation.contains("CHURN")
-                || operation.contains("RETAIN")) {
-            return businessAnalyticsService.getInactiveCustomers();
+        if (operation.contains("INACTIVE") || operation.contains("CHURN")) {
+            var data = businessAnalyticsService.getInactiveCustomers();
+            return AnalyticsResult.builder()
+                    .entity("CUSTOMER")
+                    .operation("INACTIVE_CUSTOMERS")
+                    .data(data)
+                    .dataDescription("Customers whose last order was more than 90 days ago")
+                    .recordCount(data.size())
+                    .build();
         }
 
         if (operation.contains("LIFETIME") || operation.contains("VALUE")) {
-            return businessAnalyticsService.getCustomerLifetimeValue();
+            var data = businessAnalyticsService.getCustomerLifetimeValue();
+            return AnalyticsResult.builder()
+                    .entity("CUSTOMER")
+                    .operation("LIFETIME_VALUE")
+                    .data(data)
+                    .dataDescription("Customer lifetime value ranked by total spending")
+                    .recordCount(data.size())
+                    .build();
         }
 
-        // Default for CUSTOMER: top customers by spending.
-        //
-        // Re-coerce through Jackson before handing off to the insight
-        // service. getTopCustomers() is @Cacheable -- on a cache hit,
-        // depending on the cache serializer, the returned list can come
-        // back as LinkedHashMap instances instead of TopCustomerDTO,
-        // since generic type info doesn't always survive the cache
-        // round-trip. analyzeTopCustomers() calls TopCustomerDTO-specific
-        // methods (getTotalSpending()), so it needs the real type.
-        // convertValue() is a no-op cost-wise when the objects are
-        // already the right type, so this is safe on cache misses too.
+        // Default: top customers by spending
         Object rawResult = businessAnalyticsService.getTopCustomers();
 
         List<TopCustomerDTO> topCustomers = objectMapper.convertValue(
@@ -100,6 +87,13 @@ public class CustomerAnalyticsHandler implements AnalyticsCapability {
                 new TypeReference<List<TopCustomerDTO>>() {}
         );
 
-        return businessInsightService.analyzeTopCustomers(topCustomers);
+        var insightData = businessInsightService.analyzeTopCustomers(topCustomers);
+        return AnalyticsResult.builder()
+                .entity("CUSTOMER")
+                .operation("TOP_CUSTOMERS")
+                .data(insightData)
+                .dataDescription("Top customers ranked by total spending with business insights")
+                .recordCount(topCustomers.size())
+                .build();
     }
-}
+}

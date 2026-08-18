@@ -1,6 +1,7 @@
 package com.vibhor.ecommerceanalytics.Service;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -11,16 +12,16 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    // Keep this secret outside GitHub in a real application.
-    private final String SECRET_KEY =
-            "my-super-secret-key-for-ecommerce-analytics-project-2026";
+    @Value("${jwt.secret:my-super-secret-key-for-ecommerce-analytics-project-2026}")
+    private String secretKey;
 
-    private final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 hour
+    @Value("${jwt.expiration-ms:3600000}")
+    private long expirationTime; // 1 hour default
 
     private Key getSigningKey() {
 
         return Keys.hmacShaKeyFor(
-                SECRET_KEY.getBytes(StandardCharsets.UTF_8)
+                secretKey.getBytes(StandardCharsets.UTF_8)
         );
     }
 
@@ -31,7 +32,7 @@ public class JwtService {
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date())
                 .expiration(
-                        new Date(System.currentTimeMillis() + EXPIRATION_TIME)
+                        new Date(System.currentTimeMillis() + expirationTime)
                 )
                 .signWith(getSigningKey())
                 .compact();
@@ -50,13 +51,32 @@ public class JwtService {
                 .getSubject();
     }
 
-    // Check whether token is valid
+    // Extract expiration date from JWT
+    private Date extractExpiration(String token) {
+
+        return Jwts.parser()
+                .verifyWith(
+                        (javax.crypto.SecretKey) getSigningKey()
+                )
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getExpiration();
+    }
+
+    // Check whether token has expired
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    // Check whether token is valid (username matches AND not expired)
     public boolean isTokenValid(
             String token,
             UserDetails userDetails) {
 
         String username = extractUsername(token);
 
-        return username.equals(userDetails.getUsername());
+        return username.equals(userDetails.getUsername())
+                && !isTokenExpired(token);
     }
 }

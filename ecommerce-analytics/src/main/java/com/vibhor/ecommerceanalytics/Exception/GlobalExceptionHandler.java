@@ -242,6 +242,22 @@ public class GlobalExceptionHandler {
 
 
 
+    @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(
+            org.springframework.security.authentication.BadCredentialsException ex
+    ) {
+        logger.warn("Authentication failed: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(
+                        new ErrorResponse(
+                                LocalDateTime.now(),
+                                401,
+                                "Invalid username or password"
+                        )
+                );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse>
     handleGlobalException(

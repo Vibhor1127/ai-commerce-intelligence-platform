@@ -196,28 +196,13 @@ public class AIExplanationService {
             }
 
 
-            String cleanedResponse =
-                    aiResponse
-                            .replace("```json", "")
-                            .replace("```", "")
-                            .trim();
-
-
-
-
-
-
-
-
+            String rawContent = aiResponse != null ? aiResponse.trim() : "";
+            String cleanedResponse = extractJson(rawContent);
 
             logger.info(
                     "AI Explanation Raw Response: {}",
                     cleanedResponse
             );
-
-
-
-
 
             AIExplanationResponse response =
                     objectMapper.readValue(
@@ -263,5 +248,17 @@ public class AIExplanationService {
 
     }
 
+    private String extractJson(String text) {
+        if (text == null || text.isBlank()) {
+            return "{}";
+        }
+        String stripped = text.replace("```json", "").replace("```", "").trim();
+        int firstBrace = stripped.indexOf('{');
+        int lastBrace = stripped.lastIndexOf('}');
+        if (firstBrace != -1 && lastBrace != -1 && lastBrace > firstBrace) {
+            return stripped.substring(firstBrace, lastBrace + 1);
+        }
+        return stripped;
+    }
 
 }

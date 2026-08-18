@@ -8,6 +8,7 @@ import com.vibhor.ecommerceanalytics.Service.Handler.ValidationResult;
 import com.vibhor.ecommerceanalytics.DTO.AIExplanationResponse;
 import com.vibhor.ecommerceanalytics.DTO.AIQuestionRequest;
 import com.vibhor.ecommerceanalytics.DTO.AnalyticsIntent;
+import com.vibhor.ecommerceanalytics.DTO.AnalyticsResult;
 
 import com.vibhor.ecommerceanalytics.Service.AIAnalyticsService;
 import com.vibhor.ecommerceanalytics.Service.AIExplanationService;
@@ -172,7 +173,7 @@ public class AIController {
 
 
 
-        Object analyticsData =
+        AnalyticsResult analyticsResult =
                 capability
                         .get()
                         .execute(intent);
@@ -182,13 +183,24 @@ public class AIController {
         return explanationService
                 .generateExplanation(
                         request.getQuestion(),
-                        analyticsData
+                        analyticsResult
                 );
 
     }
 
 
 
+
+
+
+    @GetMapping("/capabilities")
+    @Operation(
+            summary = "Get all supported AI analytics capabilities",
+            description = "Returns the dynamic manifest of all registered analytics business domains and their supported operations"
+    )
+    public java.util.List<java.util.Map<String, Object>> getCapabilities() {
+        return capabilityRegistry.generateCapabilityManifest();
+    }
 
 
 
