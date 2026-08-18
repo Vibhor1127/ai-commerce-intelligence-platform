@@ -1,5 +1,7 @@
 package com.vibhor.ecommerceanalytics.DTO;
 
+import java.time.LocalDateTime;
+
 /**
  * Projection for negative or critical customer reviews.
  */
@@ -12,5 +14,5 @@ public interface NegativeReviewDTO {
     String getCustomerName();
     Integer getRating();
     String getReviewText();
-    String getReviewDate();
+    LocalDateTime getReviewDate();
 }

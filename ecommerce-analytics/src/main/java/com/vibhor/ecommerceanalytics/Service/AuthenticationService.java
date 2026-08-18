@@ -4,6 +4,7 @@ import com.vibhor.ecommerceanalytics.DTO.AuthResponseDTO;
 import com.vibhor.ecommerceanalytics.DTO.LoginRequestDTO;
 import com.vibhor.ecommerceanalytics.DTO.RegisterRequestDTO;
 import com.vibhor.ecommerceanalytics.Entity.User;
+import com.vibhor.ecommerceanalytics.Exception.UserAlreadyExistsException;
 import com.vibhor.ecommerceanalytics.Repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +32,13 @@ public class AuthenticationService {
     // Register a new user
     public String register(RegisterRequestDTO dto) {
 
+        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
+            throw new UserAlreadyExistsException("Username '" + dto.getUsername() + "' is already registered");
+        }
+
         User user = new User();
 
-        user.setUsername(dto.getUsername());
+        user.setUsername(dto.getUsername().trim());
 
         // Never store plain password
         user.setPassword(
@@ -43,7 +48,7 @@ public class AuthenticationService {
         // Use requested role if provided, default to USER
         String requestedRole = dto.getRole();
         if (requestedRole != null && !requestedRole.isBlank()) {
-            user.setRole(requestedRole.toUpperCase());
+            user.setRole(requestedRole.trim().toUpperCase());
         } else {
             user.setRole("USER");
         }

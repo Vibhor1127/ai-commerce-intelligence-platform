@@ -14,17 +14,21 @@ import com.vibhor.ecommerceanalytics.Service.AIAnalyticsService;
 import com.vibhor.ecommerceanalytics.Service.AIExplanationService;
 
 
+import com.vibhor.ecommerceanalytics.DTO.ErrorResponse;
+import com.vibhor.ecommerceanalytics.DTO.ValidationErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-
 
 import java.util.Collections;
 import java.util.Optional;
-
-
 
 @RestController
 @RequestMapping("/ai")
@@ -34,67 +38,109 @@ import java.util.Optional;
 )
 public class AIController {
 
-
     private static final double MIN_CONFIDENCE_TO_EXECUTE = 0.5;
 
-
-
     private final AIAnalyticsService aiAnalyticsService;
-
     private final CapabilityRegistry capabilityRegistry;
-
     private final AIExplanationService explanationService;
-
-
-
 
     public AIController(
             AIAnalyticsService aiAnalyticsService,
             CapabilityRegistry capabilityRegistry,
             AIExplanationService explanationService
     ) {
-
         this.aiAnalyticsService = aiAnalyticsService;
-
         this.capabilityRegistry = capabilityRegistry;
-
         this.explanationService = explanationService;
-
     }
 
-
-
-
-
     @PostMapping("/ask")
+    @SecurityRequirement(name = "Bearer Authentication")
     @Operation(
             summary = "Ask AI business analytics question",
             description = """
-                    Accepts natural language business questions.
+                    Accepts natural language business questions and returns structured insights backed by deterministic database verification.
 
-                    Example questions:
-
-                    - Who are my biggest buyers?
-                    - Which products are selling the most?
-                    - Which products need restocking?
-                    - Show monthly revenue trend?
-
-
-                    Processing pipeline:
-
-                    User Question
-                    ->
-                    LLM Intent Classification
-                    ->
-                    Capability Registry
-                    ->
-                    SQL Analytics
-                    ->
-                    AI Generated Business Explanation
+                    **Example Questions**:
+                    - *Who are my biggest buyers?*
+                    - *Which products are selling the most?*
+                    - *Which products need restocking?*
+                    - *Show monthly revenue trend?*
+                    - *Which payments failed?*
+                    - *Show delayed shipments.*
                     """
     )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "AI business explanation with verified SQL data evidence",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = AIExplanationResponse.class),
+                            examples = @ExampleObject(
+                                    value = """
+                                    {
+                                      "answer": "Top customers contributed ₹264,997 in total spending.",
+                                      "reason": "Customer Vibhor Sharma is the highest contributor with 12 completed high-value orders.",
+                                      "observations": [
+                                        "Top 5 customers account for 89% of overall spending",
+                                        "Average customer order value is ₹22,083"
+                                      ],
+                                      "recommendations": [
+                                        "Create a dedicated VIP concierge tier for top spenders",
+                                        "Offer personalized renewal discounts"
+                                      ],
+                                      "evidence": {
+                                        "entity": "CUSTOMER",
+                                        "operation": "TOP_CUSTOMERS",
+                                        "recordCount": 5
+                                      }
+                                    }
+                                    """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid or empty question request",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ValidationErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized: Missing or invalid JWT Bearer token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    value = "{\"timestamp\":\"2026-08-18T22:30:00\",\"status\":401,\"message\":\"Unauthorized: Full authentication is required to access this resource\"}"
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "422",
+                    description = "Unprocessable Entity: Unable to process AI response or parse query intent",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    value = "{\"timestamp\":\"2026-08-18T22:30:00\",\"status\":422,\"message\":\"Unable to process AI response\"}"
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal Server Error / Analytics Database Failure",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
     public AIExplanationResponse askQuestion(
-            @RequestBody AIQuestionRequest request
+            @Valid @RequestBody AIQuestionRequest request
     ) {
 
 

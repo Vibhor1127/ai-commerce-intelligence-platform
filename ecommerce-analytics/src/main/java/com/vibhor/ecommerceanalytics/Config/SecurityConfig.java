@@ -83,37 +83,38 @@ public class SecurityConfig {
             HttpSecurity http
     ) throws Exception {
 
-
-
         http
-
                 .cors(cors ->
                         cors.configurationSource(corsConfigurationSource())
                 )
-
                 .csrf(csrf ->
                         csrf.disable()
                 )
-
-
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
-
-
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                            String json = String.format(
+                                    "{\"timestamp\":\"%s\",\"status\":401,\"message\":\"Unauthorized: Full authentication is required to access this resource\"}",
+                                    java.time.LocalDateTime.now()
+                            );
+                            response.getWriter().write(json);
+                        })
+                )
                 .authorizeHttpRequests(auth -> auth
 
-
-                        // Auth endpoints (register + login)
+                        // Auth endpoints (register + login) - Public
                         .requestMatchers(
                                 "/auth/**"
                         )
                         .permitAll()
 
-
-                        // Swagger
+                        // Swagger & OpenAPI docs - Public
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
@@ -121,42 +122,42 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-
-
-                        // AI endpoints (public)
+                        // AI Capabilities & Health - Public
                         .requestMatchers(
                                 "/ai/health",
-                                "/ai/ask",
                                 "/ai/capabilities"
                         )
                         .permitAll()
 
+                        // AI Query Endpoint - Protected by JWT
+                        .requestMatchers(
+                                "/ai/ask"
+                        )
+                        .authenticated()
 
-
-                        // Analytics endpoints (public for now, protect later)
+                        // Analytics endpoints - Protected by JWT
                         .requestMatchers(
                                 "/analytics/**"
                         )
-                        .permitAll()
-
-
-
-                        .anyRequest()
                         .authenticated()
 
+                        // Customer CRUD APIs - Protected by JWT
+                        .requestMatchers(
+                                "/api/customers/**"
+                        )
+                        .authenticated()
+
+                        // All other endpoints require authentication
+                        .anyRequest()
+                        .authenticated()
                 )
-
-
                 // Register JWT filter BEFORE Spring's default auth filter
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 );
 
-
-
         return http.build();
-
     }
 
 

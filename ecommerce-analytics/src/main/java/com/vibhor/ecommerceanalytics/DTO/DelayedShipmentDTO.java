@@ -1,5 +1,7 @@
 package com.vibhor.ecommerceanalytics.DTO;
 
+import java.time.LocalDateTime;
+
 /**
  * Projection for delayed or pending shipment details.
  */
@@ -9,7 +11,7 @@ public interface DelayedShipmentDTO {
     Integer getOrderId();
     String getTrackingNumber();
     String getShipmentStatus();
-    String getShippedDate();
-    String getDeliveryDate();
+    LocalDateTime getShippedDate();
+    LocalDateTime getDeliveryDate();
     Integer getDaysInTransit();
 }

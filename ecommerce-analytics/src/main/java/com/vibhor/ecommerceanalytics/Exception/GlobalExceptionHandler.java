@@ -242,6 +242,22 @@ public class GlobalExceptionHandler {
 
 
 
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(
+            UserAlreadyExistsException ex
+    ) {
+        logger.warn("User registration conflict: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(
+                        new ErrorResponse(
+                                LocalDateTime.now(),
+                                409,
+                                ex.getMessage()
+                        )
+                );
+    }
+
     @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(
             org.springframework.security.authentication.BadCredentialsException ex
@@ -254,6 +270,38 @@ public class GlobalExceptionHandler {
                                 LocalDateTime.now(),
                                 401,
                                 "Invalid username or password"
+                        )
+                );
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex
+    ) {
+        logger.warn("Access denied: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(
+                        new ErrorResponse(
+                                LocalDateTime.now(),
+                                403,
+                                "Access denied: insufficient permissions"
+                        )
+                );
+    }
+
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(
+            org.springframework.security.core.AuthenticationException ex
+    ) {
+        logger.warn("Authentication error: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(
+                        new ErrorResponse(
+                                LocalDateTime.now(),
+                                401,
+                                ex.getMessage() != null ? ex.getMessage() : "Authentication required"
                         )
                 );
     }

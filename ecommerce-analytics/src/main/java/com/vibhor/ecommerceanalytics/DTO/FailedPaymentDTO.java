@@ -1,5 +1,7 @@
 package com.vibhor.ecommerceanalytics.DTO;
 
+import java.time.LocalDateTime;
+
 /**
  * Projection for failed/problematic payment records.
  */
@@ -10,5 +12,5 @@ public interface FailedPaymentDTO {
     Double getAmount();
     String getPaymentMethod();
     String getPaymentStatus();
-    String getPaymentDate();
+    LocalDateTime getPaymentDate();
 }
