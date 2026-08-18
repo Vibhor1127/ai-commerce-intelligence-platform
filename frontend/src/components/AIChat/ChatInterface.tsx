@@ -2,7 +2,8 @@ import { FormEvent, useEffect, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { ArrowUpRight, CornerDownLeft } from 'lucide-react'
 import { MessageBubble } from '@/components/AIChat/MessageBubble'
-import { ThinkingAnimation } from '@/components/AIChat/ThinkingAnimation'
+import { PipelineAnimation } from '@/components/AIChat/PipelineAnimation'
+import { HoloPanel } from '@/components/ui/HoloPanel'
 import { api, ApiError } from '@/services/api'
 import { uid } from '@/lib/format'
 import type { ChatTurn } from '@/types/api'
@@ -16,9 +17,16 @@ const SUGGESTIONS = [
   'Show revenue trends',
 ]
 
-export function ChatInterface({ seed }: { seed?: string }) {
+export function ChatInterface({
+  seed,
+  onBusy,
+}: {
+  seed?: string
+  onBusy?: (busy: boolean) => void
+}) {
   const [question, setQuestion] = useState(seed ?? '')
   const [turns, setTurns] = useState<ChatTurn[]>([])
+  const [lastAsk, setLastAsk] = useState<string | undefined>(seed)
   const endRef = useRef<HTMLDivElement>(null)
 
   const mutation = useMutation({
@@ -53,6 +61,7 @@ export function ChatInterface({ seed }: { seed?: string }) {
   function submit(raw: string) {
     const q = raw.trim()
     if (!q || mutation.isPending) return
+    setLastAsk(q)
     setTurns((prev) => [
       ...prev,
       { id: uid('q'), role: 'user', question: q, createdAt: new Date().toISOString() },
@@ -71,25 +80,42 @@ export function ChatInterface({ seed }: { seed?: string }) {
   }, [turns, mutation.isPending])
 
   useEffect(() => {
-    if (seed) setQuestion(seed)
+    if (seed) {
+      setQuestion(seed)
+      setLastAsk(seed)
+    }
   }, [seed])
 
-  return (
-    <div className="flex flex-col gap-6">
-      {turns.length === 0 && !mutation.isPending ? (
-        <EmptyState onPick={submit} />
-      ) : (
-        <div className="space-y-6">
-          {turns.map((turn) => (
-            <MessageBubble key={turn.id} turn={turn} />
-          ))}
-          {mutation.isPending ? <ThinkingAnimation /> : null}
-          <div ref={endRef} />
-        </div>
-      )}
+  useEffect(() => {
+    onBusy?.(mutation.isPending)
+  }, [mutation.isPending, onBusy])
 
-      <form onSubmit={onSubmit} className="sticky bottom-3 z-20">
-        <div className="frame flex items-end gap-3 p-3 md:p-4">
+  const lastAssistant = [...turns].reverse().find((t) => t.role === 'assistant' && t.response)
+
+  return (
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <PipelineAnimation
+        active={mutation.isPending}
+        complete={Boolean(lastAssistant) && !mutation.isPending}
+        question={lastAsk}
+      />
+
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        {turns.length === 0 && !mutation.isPending ? (
+          <EmptyState onPick={submit} />
+        ) : (
+          <div className="space-y-5 pb-4">
+            {turns.map((turn) => (
+              <MessageBubble key={turn.id} turn={turn} />
+            ))}
+            <div ref={endRef} />
+          </div>
+        )}
+      </div>
+
+      <form onSubmit={onSubmit} className="shrink-0">
+        <div className="holo-panel flex items-end gap-3 p-3 md:p-4">
+          <span className="holo-edge" />
           <div className="min-w-0 flex-1">
             <label className="mono-label" htmlFor="ask-field">
               Command line
@@ -126,16 +152,17 @@ export function ChatInterface({ seed }: { seed?: string }) {
 function EmptyState({ onPick }: { onPick: (q: string) => void }) {
   return (
     <div className="grid gap-3 md:grid-cols-2">
-      {SUGGESTIONS.map((q) => (
-        <button
-          key={q}
-          type="button"
-          onClick={() => onPick(q)}
-          className="frame group flex items-center justify-between px-4 py-4 text-left transition hover:border-cyan/30"
-        >
-          <span className="text-sm text-bone group-hover:text-ivory">{q}</span>
-          <ArrowUpRight size={16} className="text-mute group-hover:text-cyan" />
-        </button>
+      {SUGGESTIONS.map((q, i) => (
+        <HoloPanel key={q} depth={8 + i} delay={0.04 * i} className="p-0">
+          <button
+            type="button"
+            onClick={() => onPick(q)}
+            className="group flex w-full items-center justify-between px-4 py-4 text-left"
+          >
+            <span className="text-sm text-bone group-hover:text-ivory">{q}</span>
+            <ArrowUpRight size={16} className="text-mute group-hover:text-ivory" />
+          </button>
+        </HoloPanel>
       ))}
     </div>
   )

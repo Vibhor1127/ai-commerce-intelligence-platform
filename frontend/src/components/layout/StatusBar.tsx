@@ -22,7 +22,7 @@ export function StatusBar() {
   })
 
   return (
-    <header className="flex h-11 items-center justify-between border-b border-white/5 bg-[#070a14]/90 px-4 backdrop-blur">
+    <header className="flex h-11 items-center justify-between border-b border-white/5 bg-[#070a14]/55 px-4 backdrop-blur-md">
       <div className="flex items-center gap-4">
         <span className="mono-label">SYS.01</span>
         <span className="hidden text-[11px] text-mute sm:inline">Commerce intelligence command</span>

@@ -11,7 +11,7 @@ const items = [
 
 export function SideNav() {
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/5 bg-[#070a14]/95 backdrop-blur md:static md:h-auto md:w-[88px] md:flex-col md:border-r md:border-t-0">
+    <aside className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/5 bg-[#070a14]/70 backdrop-blur-md md:static md:h-auto md:w-[88px] md:flex-col md:border-r md:border-t-0">
       <div className="hidden items-center justify-center px-3 py-5 md:flex">
         <BrandMark compact />
       </div>

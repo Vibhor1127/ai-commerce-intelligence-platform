@@ -4,7 +4,8 @@ import type { ChatTurn } from '@/types/api'
 export function MessageBubble({ turn }: { turn: ChatTurn }) {
   if (turn.role === 'user') {
     return (
-      <article className="ml-auto max-w-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+      <article className="holo-panel ml-auto max-w-2xl px-4 py-3">
+        <span className="holo-edge" />
         <div className="mono-label">Query</div>
         <p className="mt-2 text-[15px] text-ivory">{turn.question}</p>
       </article>
