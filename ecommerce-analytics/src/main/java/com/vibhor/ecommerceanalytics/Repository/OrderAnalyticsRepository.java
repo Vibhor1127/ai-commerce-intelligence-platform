@@ -3,9 +3,11 @@ package com.vibhor.ecommerceanalytics.Repository;
 import com.vibhor.ecommerceanalytics.DTO.CancelledOrderDTO;
 import com.vibhor.ecommerceanalytics.DTO.CustomerOrderFrequencyDTO;
 import com.vibhor.ecommerceanalytics.DTO.OrderTrendDTO;
+import com.vibhor.ecommerceanalytics.DTO.RecentOrderDTO;
 import com.vibhor.ecommerceanalytics.Entity.orders;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -57,4 +59,28 @@ public interface OrderAnalyticsRepository extends JpaRepository<orders, Integer>
         LIMIT 50
         """, nativeQuery = true)
     List<CustomerOrderFrequencyDTO> getCustomerOrderFrequency();
+
+    interface RecentOrderProjection {
+        Integer getOrderId();
+        Integer getCustomerId();
+        String getCustomerName();
+        Double getTotalAmount();
+        String getStatus();
+        java.time.LocalDateTime getOrderDate();
+    }
+
+    @Query(value = """
+        SELECT 
+            o.order_id AS orderId,
+            c.customer_id AS customerId,
+            CONCAT(c.first_name, ' ', COALESCE(c.last_name, '')) AS customerName,
+            o.total_amount AS totalAmount,
+            o.status AS status,
+            o.order_date AS orderDate
+        FROM orders o
+        JOIN customers c ON o.customer_id = c.customer_id
+        ORDER BY o.order_date DESC
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<RecentOrderProjection> getRecentOrders(@Param("limit") int limit);
 }

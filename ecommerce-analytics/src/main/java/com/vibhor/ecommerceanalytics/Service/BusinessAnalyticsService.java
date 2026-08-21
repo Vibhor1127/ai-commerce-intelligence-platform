@@ -4,6 +4,7 @@ import com.vibhor.ecommerceanalytics.Config.RedisConfig;
 import com.vibhor.ecommerceanalytics.DTO.*;
 import com.vibhor.ecommerceanalytics.Exception.AnalyticsDataAccessException;
 import com.vibhor.ecommerceanalytics.Repository.BusinessAnalyticsRepository;
+import com.vibhor.ecommerceanalytics.Repository.OrderAnalyticsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -18,6 +19,9 @@ public class BusinessAnalyticsService {
 
     @Autowired
     private BusinessAnalyticsRepository businessAnalyticsRepository;
+
+    @Autowired
+    private OrderAnalyticsRepository orderAnalyticsRepository;
 
     @Cacheable(RedisConfig.CACHE_TOP_CUSTOMERS)
     public List<TopCustomerDTO> getTopCustomers() {
@@ -97,6 +101,24 @@ public class BusinessAnalyticsService {
             return businessAnalyticsRepository.getDashboard();
         } catch (DataAccessException e) {
             throw new AnalyticsDataAccessException("Failed to fetch dashboard analytics", e);
+        }
+    }
+
+    public List<RecentOrderDTO> getRecentOrders(int limit) {
+        try {
+            int safeLimit = Math.min(Math.max(limit, 1), 100);
+            return orderAnalyticsRepository.getRecentOrders(safeLimit).stream()
+                    .map(p -> RecentOrderDTO.builder()
+                            .orderId(p.getOrderId())
+                            .customerId(p.getCustomerId())
+                            .customerName(p.getCustomerName())
+                            .totalAmount(p.getTotalAmount())
+                            .status(p.getStatus())
+                            .orderDate(p.getOrderDate())
+                            .build())
+                    .toList();
+        } catch (DataAccessException e) {
+            throw new AnalyticsDataAccessException("Failed to fetch recent orders", e);
         }
     }
 

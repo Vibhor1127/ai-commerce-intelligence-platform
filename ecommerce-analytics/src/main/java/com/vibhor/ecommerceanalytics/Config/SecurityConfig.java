@@ -106,7 +106,16 @@ public class SecurityConfig {
                             response.setContentType("application/json;charset=UTF-8");
                             response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                             String json = String.format(
-                                    "{\"timestamp\":\"%s\",\"status\":401,\"message\":\"Unauthorized: Full authentication is required to access this resource\"}",
+                                    "{\"timestamp\":\"%s\",\"status\":401,\"message\":\"Unauthorized: Invalid credentials or session expired\"}",
+                                    java.time.LocalDateTime.now()
+                            );
+                            response.getWriter().write(json);
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+                            String json = String.format(
+                                    "{\"timestamp\":\"%s\",\"status\":403,\"message\":\"Forbidden: Insufficient permissions\"}",
                                     java.time.LocalDateTime.now()
                             );
                             response.getWriter().write(json);
@@ -134,6 +143,14 @@ public class SecurityConfig {
                                 "/ai/capabilities"
                         )
                         .permitAll()
+
+                        // Storefront — shoppers and admins (admins may browse for testing)
+                        .requestMatchers("/api/store/**")
+                        .hasAnyRole("USER", "ADMIN")
+
+                        // Admin shopkeeper console
+                        .requestMatchers("/api/admin/**")
+                        .hasRole("ADMIN")
 
                         // AI Query Endpoint - Protected by JWT
                         .requestMatchers(

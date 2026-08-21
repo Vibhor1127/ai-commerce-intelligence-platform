@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import { ArrowUpRight } from 'lucide-react'
 import { entityIcon } from '@/lib/entityMeta'
 import { entityLabel } from '@/lib/format'

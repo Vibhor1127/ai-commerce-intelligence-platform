@@ -1,11 +1,11 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/cn'
 
 export function HoloPanel({
   children,
   className,
-  depth = 1,
+  depth: _depth = 1,
   delay = 0,
 }: {
   children: React.ReactNode

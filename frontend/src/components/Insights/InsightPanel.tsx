@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'motion/react'
 import { CheckCircle2, ChevronDown, Lightbulb, Sparkles, Database } from 'lucide-react'
 import { EvidenceVisualizer } from '@/components/Insights/EvidenceVisualizer'
 import type { AIExplanationResponse } from '@/types/api'

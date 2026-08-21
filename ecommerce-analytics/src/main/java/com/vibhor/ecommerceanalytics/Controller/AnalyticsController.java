@@ -215,4 +215,10 @@ public class AnalyticsController {
     public DashboardDTO GetDashboard() {
         return businessAnalyticsService.getDashboard();
     }
+
+    @GetMapping("/orders/recent")
+    @Operation(summary = "Get most recent orders", description = "Returns the latest orders ordered by date descending.")
+    public List<RecentOrderDTO> getRecentOrders(@RequestParam(defaultValue = "15") int limit) {
+        return businessAnalyticsService.getRecentOrders(limit);
+    }
 }

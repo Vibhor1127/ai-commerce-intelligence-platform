@@ -14,13 +14,15 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-
 public class customers {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "customer_id")
     private Integer customerId;
+
+    @Column(name = "user_id", unique = true)
+    private Integer userId;
 
     @Column(name = "first_name")
     @NotBlank(message = "First Name is required.")
@@ -45,18 +47,12 @@ public class customers {
     @PastOrPresent
     private LocalDate signupDate;
 
-    // ============================================================
-    // RELATIONSHIPS
-    // ============================================================
-
-    // One Customer can place MANY Orders.
-    // mappedBy = "customer" refers to the customer object
-    // present inside orders.java.
     @OneToMany(mappedBy = "customer")
     private List<orders> orders;
 
-    // One Customer can write MANY Reviews.
-    // Each Review belongs to only one Customer.
     @OneToMany(mappedBy = "customer")
     private List<reviews> reviews;
+
+    @OneToMany(mappedBy = "customer")
+    private List<Address> addresses;
 }

@@ -1,23 +1,44 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Terminal, ShieldCheck, ArrowRight } from 'lucide-react'
-import { api } from '@/services/api'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '@/lib/auth'
+import { cn } from '@/lib/cn'
+import { UniverseCanvas } from '@/components/Three/UniverseCanvas'
 
 export function LoginPage() {
-  const [username, setUsername] = useState('admin')
-  const [password, setPassword] = useState('admin123')
+  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [role, setRole] = useState('USER')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [city, setCity] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { login, register } = useAuth()
   const navigate = useNavigate()
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
     try {
-      await api.login(username, password)
-      navigate('/')
-    } catch (err: unknown) {
+      if (mode === 'register') {
+        await register({
+          username,
+          password,
+          role,
+          firstName: role === 'USER' ? firstName : undefined,
+          lastName: role === 'USER' ? lastName : undefined,
+          email: role === 'USER' ? email : undefined,
+          city: role === 'USER' ? city : undefined,
+        })
+      } else {
+        await login(username, password)
+      }
+      const storedRole = localStorage.getItem('aci_role')
+      navigate(storedRole === 'ADMIN' || storedRole === 'ANALYST' ? '/console' : '/store')
+    } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed')
     } finally {
       setLoading(false)
@@ -25,81 +46,109 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-void px-4 font-sans text-bone">
-      {/* Background glow */}
-      <div className="pointer-events-none absolute h-96 w-96 rounded-full bg-cyan/10 blur-[100px]" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-store-paper px-4">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(196,92,38,0.15),transparent_50%),radial-gradient(ellipse_at_bottom_right,rgba(47,93,80,0.12),transparent_45%)]" />
+      <div className="pointer-events-none absolute inset-0 z-0">
+        <UniverseCanvas />
+      </div>
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-store-ink/10 bg-white/80 p-6 shadow-xl backdrop-blur md:p-8">
+        <p className="font-storeDisplay text-3xl font-semibold text-store-ink">
+          ACI <span className="text-store-clay">Commerce</span>
+        </p>
+        <p className="mt-1 text-sm text-store-mist">
+          {mode === 'login' ? 'Sign in to your store or console' : 'Create an account'}
+        </p>
 
-      <div className="holo-panel relative w-full max-w-md p-6 md:p-8">
-        <span className="holo-edge" />
-
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center border border-cyan/40 bg-cyan/10 text-cyan">
-            <Terminal size={20} />
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold tracking-tight text-ivory">
-              ACI <span className="text-cyan">OS</span>
-            </h1>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-mute">
-              Security Clearance · Node Access
-            </p>
-          </div>
+        <div className="mt-6 flex gap-2 rounded-lg bg-store-sand p-1">
+          {(['login', 'register'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={cn(
+                'flex-1 rounded-md py-2 text-sm font-medium capitalize',
+                mode === m ? 'bg-white text-store-ink shadow-sm' : 'text-store-mist',
+              )}
+            >
+              {m}
+            </button>
+          ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-          <div>
-            <label className="mono-label" htmlFor="username">
-              Identifier / Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="mt-1.5 w-full border border-white/10 bg-void/80 px-3.5 py-2.5 font-mono text-sm text-ivory outline-none transition focus:border-cyan/50"
-              placeholder="e.g. admin"
-            />
-          </div>
+        <form onSubmit={onSubmit} className="mt-6 space-y-3">
+          <Field label="Username" value={username} onChange={setUsername} required />
+          <Field label="Password" value={password} onChange={setPassword} type="password" required />
 
-          <div>
-            <label className="mono-label" htmlFor="password">
-              Clearance Key / Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1.5 w-full border border-white/10 bg-void/80 px-3.5 py-2.5 font-mono text-sm text-ivory outline-none transition focus:border-cyan/50"
-              placeholder="••••••••"
-            />
-          </div>
-
-          {error && (
-            <div className="border border-amber/30 bg-amber/10 px-3.5 py-2.5 font-mono text-xs text-amber">
-              {error}
-            </div>
+          {mode === 'register' && (
+            <>
+              <label className="block text-xs font-medium text-store-mist">
+                Role
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-store-ink/15 bg-white px-3 py-2 text-sm text-store-ink"
+                >
+                  <option value="USER">Shopper (USER)</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </label>
+              {role === 'USER' && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="First name" value={firstName} onChange={setFirstName} required />
+                    <Field label="Last name" value={lastName} onChange={setLastName} />
+                  </div>
+                  <Field label="Email" value={email} onChange={setEmail} type="email" required />
+                  <Field label="City" value={city} onChange={setCity} required />
+                </>
+              )}
+            </>
           )}
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="mt-6 flex h-11 w-full items-center justify-center gap-2 bg-ivory font-mono text-xs font-semibold uppercase tracking-widest text-void transition hover:bg-cyan disabled:opacity-50"
+            className="w-full rounded-lg bg-store-clay py-2.5 text-sm font-semibold text-white transition hover:bg-store-clay/90 disabled:opacity-60"
           >
-            {loading ? 'Authenticating…' : 'Access Platform'}
-            <ArrowRight size={14} />
+            {loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
           </button>
         </form>
 
-        <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4 text-[11px] text-mute">
-          <span className="flex items-center gap-1">
-            <ShieldCheck size={13} className="text-emerald" /> JWT Guard Active
-          </span>
-          <span className="font-mono">Demo: admin / admin123</span>
-        </div>
+        <p className="mt-4 text-center text-xs text-store-mist">
+          <Link to="/" className="underline">
+            Back
+          </Link>
+        </p>
       </div>
     </div>
+  )
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  required,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  type?: string
+  required?: boolean
+}) {
+  return (
+    <label className="block text-xs font-medium text-store-mist">
+      {label}
+      <input
+        type={type}
+        value={value}
+        required={required}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full rounded-lg border border-store-ink/15 bg-white px-3 py-2 text-sm text-store-ink outline-none focus:border-store-clay"
+      />
+    </label>
   )
 }

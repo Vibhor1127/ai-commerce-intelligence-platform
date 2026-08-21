@@ -93,18 +93,20 @@ export function ChatInterface({
   const lastAssistant = [...turns].reverse().find((t) => t.role === 'assistant' && t.response)
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4">
-      <PipelineAnimation
-        active={mutation.isPending}
-        complete={Boolean(lastAssistant) && !mutation.isPending}
-        question={lastAsk}
-      />
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
+      <div className="shrink-0">
+        <PipelineAnimation
+          active={mutation.isPending}
+          complete={Boolean(lastAssistant) && !mutation.isPending}
+          question={lastAsk}
+        />
+      </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         {turns.length === 0 && !mutation.isPending ? (
           <EmptyState onPick={submit} />
         ) : (
-          <div className="space-y-5 pb-4">
+          <div className="space-y-4 pb-2">
             {turns.map((turn) => (
               <MessageBubble key={turn.id} turn={turn} />
             ))}
@@ -113,12 +115,12 @@ export function ChatInterface({
         )}
       </div>
 
-      <form onSubmit={onSubmit} className="shrink-0">
-        <div className="holo-panel flex items-end gap-3 p-3 md:p-4">
+      <form onSubmit={onSubmit} className="shrink-0 mt-auto pt-1">
+        <div className="holo-panel flex items-end gap-3 p-3 md:p-3.5">
           <span className="holo-edge" />
           <div className="min-w-0 flex-1">
-            <label className="mono-label" htmlFor="ask-field">
-              Command line
+            <label className="mono-label text-[10px]" htmlFor="ask-field">
+              Command line interface
             </label>
             <textarea
               id="ask-field"
@@ -131,14 +133,14 @@ export function ChatInterface({
                   submit(question)
                 }
               }}
-              placeholder="Ask the store a business question…"
-              className="mt-2 w-full resize-none bg-transparent text-[15px] text-ivory outline-none placeholder:text-mute"
+              placeholder="Ask a business intelligence question (e.g., 'Which products have bad reviews?')..."
+              className="mt-1 w-full resize-none bg-transparent text-sm text-ivory outline-none placeholder:text-mute focus:ring-0"
             />
           </div>
           <button
             type="submit"
             disabled={mutation.isPending || !question.trim()}
-            className="flex h-11 items-center gap-2 bg-ivory px-4 font-mono text-[11px] uppercase tracking-[0.16em] text-void transition hover:bg-cyan disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-10 shrink-0 items-center gap-2 rounded bg-ivory px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-void transition hover:bg-cyan hover:shadow-cyan-glow disabled:cursor-not-allowed disabled:opacity-40"
           >
             Run
             <CornerDownLeft size={14} />

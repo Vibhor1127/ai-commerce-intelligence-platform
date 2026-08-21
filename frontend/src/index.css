@@ -7,21 +7,17 @@
     --color-void: #050816;
     --color-panel: #0B1020;
     --color-cyan: #00F5FF;
-    --color-violet: #8B5CF6;
-    --color-emerald: #10B981;
-    --color-amber: #F59E0B;
-    --color-ivory: #F4EFE6;
-    --color-bone: #C8D1DC;
-    --color-mute: #64748B;
+    --store-ink: #1A1410;
+    --store-paper: #F7F3EE;
+    --store-clay: #C45C26;
+    --store-pine: #2F5D50;
   }
 
   body {
-    background-color: var(--color-void);
-    color: var(--color-bone);
-    font-family: 'Sora', sans-serif;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
+    font-family: 'Sora', sans-serif;
   }
 }
 
@@ -41,7 +37,6 @@
   color: #64748B;
 }
 
-/* Holographic Panel */
 .holo-panel {
   position: relative;
   background: rgba(11, 16, 32, 0.7);
@@ -59,59 +54,27 @@
   background: linear-gradient(90deg, transparent, rgba(0, 245, 255, 0.5), transparent);
 }
 
-/* Framed container with corner ticks */
-.frame {
-  position: relative;
-  background: rgba(11, 16, 32, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(8px);
+.store-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(196, 92, 38, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(47, 93, 80, 0.1), transparent),
+    #F7F3EE;
+  color: #1A1410;
+  font-family: 'DM Sans', sans-serif;
 }
 
-.frame-ticks::before,
-.frame-ticks::after,
-.frame-ticks > i:nth-of-type(1),
-.frame-ticks > i:nth-of-type(2) {
-  content: '';
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  border-color: rgba(0, 245, 255, 0.4);
-  pointer-events: none;
+.console-shell {
+  min-height: 100vh;
+  background: #050816;
+  color: #C8D1DC;
+  font-family: 'Sora', sans-serif;
 }
 
-.frame-ticks::before {
-  top: -1px;
-  left: -1px;
-  border-top: 1px solid;
-  border-left: 1px solid;
+.skeleton {
+  @apply animate-pulse rounded bg-store-sand/80;
 }
 
-.frame-ticks::after {
-  top: -1px;
-  right: -1px;
-  border-top: 1px solid;
-  border-right: 1px solid;
-}
-
-.frame-ticks > i:nth-of-type(1) {
-  bottom: -1px;
-  left: -1px;
-  border-bottom: 1px solid;
-  border-left: 1px solid;
-}
-
-.frame-ticks > i:nth-of-type(2) {
-  bottom: -1px;
-  right: -1px;
-  border-bottom: 1px solid;
-  border-right: 1px solid;
-}
-
-@keyframes scanX {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(300%); }
-}
-
-.scan-x {
-  animation: scanX 2s infinite linear;
+.console-skeleton {
+  @apply animate-pulse rounded bg-white/5;
 }

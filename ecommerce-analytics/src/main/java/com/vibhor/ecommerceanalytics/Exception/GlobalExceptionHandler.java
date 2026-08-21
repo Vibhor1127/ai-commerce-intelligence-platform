@@ -306,6 +306,46 @@ public class GlobalExceptionHandler {
                 );
     }
 
+    @ExceptionHandler(InvalidOrderTransitionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidOrderTransition(
+            InvalidOrderTransitionException ex
+    ) {
+        logger.warn("Invalid order transition: {}", ex.getMessage());
+        return ResponseEntity
+                .badRequest()
+                .body(
+                        new ErrorResponse(
+                                LocalDateTime.now(),
+                                400,
+                                ex.getMessage()
+                        )
+                );
+    }
+
+    @ExceptionHandler(ResourceConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(ResourceConflictException ex) {
+        logger.warn("Conflict: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(LocalDateTime.now(), 409, ex.getMessage()));
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
+        logger.warn("Not found: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(LocalDateTime.now(), 404, ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        logger.warn("Bad request: {}", ex.getMessage());
+        return ResponseEntity
+                .badRequest()
+                .body(new ErrorResponse(LocalDateTime.now(), 400, ex.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse>
     handleGlobalException(

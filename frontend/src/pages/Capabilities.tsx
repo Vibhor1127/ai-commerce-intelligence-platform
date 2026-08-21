@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { CapabilityCard } from '@/components/Dashboard/CapabilityCard'
@@ -8,7 +7,6 @@ import type { Capability } from '@/types/api'
 
 export function CapabilitiesPage() {
   const navigate = useNavigate()
-  const [activeCap, setActiveCap] = useState<Capability | null>(null)
 
   const { data: capsResponse, isLoading } = useQuery({
     queryKey: ['capabilities'],
@@ -21,7 +19,7 @@ export function CapabilitiesPage() {
     const question = op
       ? `Run analytics operation for ${cap.entity}: ${op.replaceAll('_', ' ')}`
       : `Give me a full analytics summary on ${cap.entity}`
-    navigate(`/ask?q=${encodeURIComponent(question)}`)
+    navigate(`/console/ask?q=${encodeURIComponent(question)}`)
   }
 
   return (
@@ -37,7 +35,7 @@ export function CapabilitiesPage() {
       </div>
 
       {/* 3D Orbiting Galaxy */}
-      <DataGalaxy capabilities={capabilities} onSelect={(cap) => setActiveCap(cap)} />
+      <DataGalaxy capabilities={capabilities} onSelect={(cap) => handleOpen(cap)} />
 
       {/* Grid of Capabilities */}
       <div>

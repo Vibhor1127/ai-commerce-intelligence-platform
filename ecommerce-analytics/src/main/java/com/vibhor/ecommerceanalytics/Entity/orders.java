@@ -24,28 +24,20 @@ public class orders {
     @Column(name = "order_date")
     private LocalDateTime orderDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private String status;
+    private OrderStatus status;
 
     @Column(name = "total_amount")
     private Double totalAmount;
 
-    // ============================================================
-    // RELATIONSHIPS
-    // ============================================================
-
-    // MANY Orders belong to ONE Customer.
-    //
-    // Example:
-    // Vibhor
-    //    -> Order 101
-    //    -> Order 102
-    //    -> Order 103
-    //
-    // Hibernate automatically manages customer_id.
     @ManyToOne
     @JoinColumn(name = "customer_id")
     private customers customer;
+
+    @ManyToOne
+    @JoinColumn(name = "shipping_address_id")
+    private Address shippingAddress;
 
     // ONE Order contains MANY OrderItems.
     //
