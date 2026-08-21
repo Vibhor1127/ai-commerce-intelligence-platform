@@ -351,7 +351,9 @@ class ApiService {
 
   async getCapabilities(): Promise<AICapabilitiesResponse> {
     try {
-      return await this.request('/ai/capabilities')
+      const resp = await this.request<AICapabilitiesResponse>('/ai/capabilities')
+      if (resp?.capabilities && resp.capabilities.length > 0) return resp
+      return REPLICA_CAPABILITIES
     } catch {
       return REPLICA_CAPABILITIES
     }

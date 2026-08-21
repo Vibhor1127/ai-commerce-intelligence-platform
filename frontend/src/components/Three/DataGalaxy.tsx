@@ -141,11 +141,12 @@ function OrbitingNode({
           </Sphere>
         )}
 
-        <Html distanceFactor={14} center>
+        <Html distanceFactor={14} center style={{ pointerEvents: 'none' }}>
           <div
             onClick={() => onSelect?.(capability)}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            style={{ pointerEvents: 'auto' }}
             className={`group cursor-pointer select-none whitespace-nowrap rounded-lg border px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider backdrop-blur-md transition-all duration-200 ${
               hovered
                 ? 'scale-110 border-cyan bg-cyan text-void shadow-[0_0_20px_rgba(0,245,255,0.8)]'

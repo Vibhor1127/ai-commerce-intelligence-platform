@@ -16,9 +16,9 @@ import { StoreOrderDetailPage } from '@/pages/store/OrderDetail'
 import { StoreProfilePage } from '@/pages/store/Profile'
 import { ConsoleDashboardPage } from '@/pages/console/Dashboard'
 import { ConsoleOrdersPage } from '@/pages/console/Orders'
-import { ConsoleReviewsPage } from '@/pages/console/Reviews'
 import { ConsoleInventoryPage } from '@/pages/console/Inventory'
 import { ConsoleUsersPage } from '@/pages/console/Users'
+import { ConsoleReviewsPage } from '@/pages/console/Reviews'
 import { AIAnalyticsPage } from '@/pages/AIAnalytics'
 import { CapabilitiesPage } from '@/pages/Capabilities'
 
@@ -69,9 +69,9 @@ export default function App() {
               >
                 <Route index element={<ConsoleDashboardPage />} />
                 <Route path="orders" element={<ConsoleOrdersPage />} />
-                <Route path="reviews" element={<ConsoleReviewsPage />} />
                 <Route path="inventory" element={<ConsoleInventoryPage />} />
                 <Route path="users" element={<ConsoleUsersPage />} />
+                <Route path="reviews" element={<ConsoleReviewsPage />} />
                 <Route path="ask" element={<AIAnalyticsPage />} />
                 <Route path="capabilities" element={<CapabilitiesPage />} />
               </Route>

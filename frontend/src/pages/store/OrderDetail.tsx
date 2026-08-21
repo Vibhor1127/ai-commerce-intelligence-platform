@@ -12,9 +12,6 @@ export function StoreOrderDetailPage() {
   const navigate = useNavigate()
   const toast = useToast()
   const qc = useQueryClient()
-  const [rating, setRating] = useState(5)
-  const [comment, setComment] = useState('')
-  const [reviewProductId, setReviewProductId] = useState<number | null>(null)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
 
   const order = useQuery({
@@ -30,22 +27,6 @@ export function StoreOrderDetailPage() {
       qc.invalidateQueries({ queryKey: ['orders'] })
       toast.push('Order cancelled successfully')
       setShowCancelConfirm(false)
-    },
-    onError: (e: Error) => toast.push(e.message, 'err'),
-  })
-
-  const review = useMutation({
-    mutationFn: () =>
-      api.createReview({
-        productId: reviewProductId!,
-        orderId,
-        rating,
-        comment,
-      }),
-    onSuccess: () => {
-      toast.push('Review submitted')
-      setReviewProductId(null)
-      qc.invalidateQueries({ queryKey: ['product-reviews'] })
     },
     onError: (e: Error) => toast.push(e.message, 'err'),
   })
@@ -93,13 +74,7 @@ export function StoreOrderDetailPage() {
                 Qty {item.quantity} · ₹{item.price}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setReviewProductId(item.productId)}
-              className="text-sm text-store-clay underline"
-            >
-              Review
-            </button>
+
           </li>
         ))}
       </ul>
@@ -153,35 +128,6 @@ export function StoreOrderDetailPage() {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Review Form */}
-      {reviewProductId && (
-        <div className="mt-6 rounded-xl border border-store-clay/30 bg-white p-4">
-          <p className="text-sm font-medium">Leave a review</p>
-          <input
-            type="number"
-            min={1}
-            max={5}
-            value={rating}
-            onChange={(e) => setRating(Number(e.target.value))}
-            className="mt-2 w-20 rounded border px-2 py-1 text-sm"
-          />
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            className="mt-2 w-full rounded border px-3 py-2 text-sm"
-            rows={3}
-            placeholder="Comment"
-          />
-          <button
-            type="button"
-            onClick={() => review.mutate()}
-            className="mt-2 rounded-lg bg-store-pine px-4 py-2 text-sm text-white"
-          >
-            Submit
-          </button>
         </div>
       )}
 

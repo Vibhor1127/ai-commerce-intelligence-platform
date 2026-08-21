@@ -17,12 +17,6 @@ export function StoreProductDetailPage() {
     queryFn: () => api.getProduct(productId),
     enabled: Number.isFinite(productId),
   })
-  const reviews = useQuery({
-    queryKey: ['product-reviews', productId],
-    queryFn: () => api.getProductReviews(productId),
-    enabled: Number.isFinite(productId),
-  })
-
   const add = useMutation({
     mutationFn: () => api.addToCart(productId, qty),
     onSuccess: () => {
@@ -62,7 +56,7 @@ export function StoreProductDetailPage() {
         <h1 className="mt-1 font-storeDisplay text-3xl font-semibold text-store-ink">{p.productName}</h1>
         <p className="mt-3 text-2xl font-semibold text-store-clay">₹{p.price?.toLocaleString()}</p>
         <p className="mt-2 text-sm text-store-mist">
-          {p.avgRating?.toFixed?.(1) ?? '—'} ★ · {p.reviewCount ?? 0} reviews · {p.stock} in stock
+          {p.stock} in stock
         </p>
 
         <div className="mt-6 flex items-center gap-3">
@@ -84,22 +78,7 @@ export function StoreProductDetailPage() {
           </button>
         </div>
 
-        <section className="mt-10">
-          <h2 className="font-storeDisplay text-xl font-semibold">Reviews</h2>
-          <div className="mt-4 space-y-3">
-            {(reviews.data?.content ?? []).length === 0 && (
-              <p className="text-sm text-store-mist">No reviews yet.</p>
-            )}
-            {(reviews.data?.content ?? []).map((r) => (
-              <div key={r.reviewId} className="rounded-xl border border-store-ink/8 bg-white p-4">
-                <p className="text-sm font-medium text-store-ink">
-                  {r.customerName} · {r.rating}★
-                </p>
-                <p className="mt-1 text-sm text-store-mist">{r.reviewText}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+
       </div>
     </div>
   )
