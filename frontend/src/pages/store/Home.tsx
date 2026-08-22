@@ -3,6 +3,38 @@ import { useQuery } from '@tanstack/react-query'
 import { motion } from 'motion/react'
 import { api } from '@/services/api'
 import { ArrowRight, Sparkles, Truck, ShieldCheck, Zap } from 'lucide-react'
+import { getProductImageUrl } from '@/lib/productImage'
+import type { ProductCard } from '@/types/api'
+
+const DEFAULT_FEATURED: ProductCard[] = [
+  {
+    productId: 1,
+    productName: 'Apex 750W Turbo Mixer Grinder (3 Stainless Steel Jars)',
+    price: 3499,
+    stock: 45,
+    categoryName: 'Home & Kitchen',
+    imageUrl: '/images/mixer-grinder.jpg',
+    avgRating: 4.9,
+  },
+  {
+    productId: 2,
+    productName: 'Pro Match Size 5 Tournament Football',
+    price: 1299,
+    stock: 80,
+    categoryName: 'Sports & Fitness',
+    imageUrl: '/images/football.jpg',
+    avgRating: 4.8,
+  },
+  {
+    productId: 3,
+    productName: 'HyperSpeed 4WD High-Speed Remote Control Offroad Car',
+    price: 4999,
+    stock: 25,
+    categoryName: 'Toys & RC Vehicles',
+    imageUrl: '/images/remote-car.jpg',
+    avgRating: 4.9,
+  },
+]
 
 export function StoreHomePage() {
   const products = useQuery({
@@ -131,13 +163,13 @@ export function StoreHomePage() {
           </Link>
         </div>
 
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {products.isLoading &&
-            Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="skeleton h-64 rounded-2xl" />
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="skeleton h-72 rounded-2xl" />
             ))}
 
-          {(products.data?.content ?? []).map((p, i) => (
+          {((products.data?.content && products.data.content.length > 0) ? products.data.content : DEFAULT_FEATURED).map((p, i) => (
             <motion.div
               key={p.productId}
               initial={{ opacity: 0, y: 15 }}
@@ -150,23 +182,17 @@ export function StoreHomePage() {
                 className="group flex h-full flex-col justify-between rounded-2xl border border-store-ink/8 bg-white p-4 shadow-sm transition-all hover:shadow-xl hover:border-store-clay/30"
               >
                 <div>
-                  <div className="relative flex h-36 items-center justify-center rounded-xl bg-gradient-to-br from-store-sand/70 to-store-paper text-store-mist overflow-hidden">
-                    {p.imageUrl ? (
-                      <img
-                        src={p.imageUrl}
-                        alt={p.productName}
-                        className="h-full w-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden')
-                        }}
-                      />
-                    ) : null}
-                    <span className={`font-display text-4xl font-bold opacity-30 text-store-clay group-hover:scale-110 transition-transform duration-300 ${p.imageUrl ? 'hidden' : ''}`}>
-                      {p.productName.slice(0, 1)}
-                    </span>
+                  <div className="relative flex h-48 items-center justify-center rounded-xl bg-gradient-to-br from-store-sand/40 to-store-paper text-store-mist overflow-hidden">
+                    <img
+                      src={getProductImageUrl(p)}
+                      alt={p.productName}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      onError={(e) => {
+                        e.currentTarget.src = getProductImageUrl({ ...p, imageUrl: undefined })
+                      }}
+                    />
                     {p.categoryName && (
-                      <span className="absolute top-2 left-2 rounded-md bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-store-ink/80 backdrop-blur">
+                      <span className="absolute top-2 left-2 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-store-ink/80 backdrop-blur shadow-sm">
                         {p.categoryName}
                       </span>
                     )}

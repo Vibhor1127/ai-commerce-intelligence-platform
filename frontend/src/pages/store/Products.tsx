@@ -3,6 +3,37 @@ import { useQuery } from '@tanstack/react-query'
 import { motion } from 'motion/react'
 import { useState } from 'react'
 import { api } from '@/services/api'
+import { getProductImageUrl } from '@/lib/productImage'
+
+const DEFAULT_CATALOG = [
+  {
+    productId: 1,
+    productName: 'Apex 750W Turbo Mixer Grinder (3 Stainless Steel Jars)',
+    price: 3499,
+    stock: 45,
+    categoryName: 'Home & Kitchen',
+    imageUrl: '/images/mixer-grinder.jpg',
+    avgRating: 4.9,
+  },
+  {
+    productId: 2,
+    productName: 'Pro Match Size 5 Tournament Football',
+    price: 1299,
+    stock: 80,
+    categoryName: 'Sports & Fitness',
+    imageUrl: '/images/football.jpg',
+    avgRating: 4.8,
+  },
+  {
+    productId: 3,
+    productName: 'HyperSpeed 4WD High-Speed Remote Control Offroad Car',
+    price: 4999,
+    stock: 25,
+    categoryName: 'Toys & RC Vehicles',
+    imageUrl: '/images/remote-car.jpg',
+    avgRating: 4.9,
+  },
+]
 
 export function StoreProductsPage() {
   const [params, setParams] = useSearchParams()
@@ -15,6 +46,11 @@ export function StoreProductsPage() {
     queryKey: ['products', category, search, page],
     queryFn: () => api.getProducts({ category, search: search || undefined, page, size: 12 }),
   })
+
+  const productList =
+    (products.data?.content && products.data.content.length > 0)
+      ? products.data.content
+      : DEFAULT_CATALOG
 
   return (
     <div>
@@ -56,7 +92,7 @@ export function StoreProductsPage() {
         {products.isError && (
           <p className="text-sm text-red-600">Could not load products. Is the API running?</p>
         )}
-        {(products.data?.content ?? []).map((p, i) => (
+        {productList.map((p, i) => (
           <motion.div
             key={p.productId}
             layoutId={`product-${p.productId}`}
@@ -68,31 +104,27 @@ export function StoreProductsPage() {
               to={`/store/products/${p.productId}`}
               className="block h-full rounded-2xl border border-store-ink/8 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
-              <div className="relative flex h-32 items-center justify-center rounded-xl bg-gradient-to-br from-store-sand/70 to-store-paper overflow-hidden">
-                {p.imageUrl ? (
-                  <img
-                    src={p.imageUrl}
-                    alt={p.productName}
-                    className="h-full w-full object-contain p-2"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none'
-                      e.currentTarget.nextElementSibling?.classList.remove('hidden')
-                    }}
-                  />
-                ) : null}
-                <span className={`font-display text-3xl font-bold text-store-clay/20 ${p.imageUrl ? 'hidden' : ''}`}>{p.productName.slice(0, 1)}</span>
+              <div className="relative flex h-44 items-center justify-center rounded-xl bg-gradient-to-br from-store-sand/40 to-store-paper overflow-hidden">
+                <img
+                  src={getProductImageUrl(p)}
+                  alt={p.productName}
+                  className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                  onError={(e) => {
+                    e.currentTarget.src = getProductImageUrl({ ...p, imageUrl: undefined })
+                  }}
+                />
                 {p.categoryName && (
-                  <span className="absolute top-2 left-2 rounded-md bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-store-ink/80 backdrop-blur">
+                  <span className="absolute top-2 left-2 rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-store-ink/80 backdrop-blur shadow-sm">
                     {p.categoryName}
                   </span>
                 )}
               </div>
-              <p className="text-xs uppercase tracking-wide text-store-mist mt-2">{p.categoryName}</p>
-              <h3 className="mt-1 font-medium text-store-ink">{p.productName}</h3>
+              <p className="text-xs uppercase tracking-wide text-store-mist mt-2.5">{p.categoryName}</p>
+              <h3 className="mt-1 font-medium text-store-ink line-clamp-1">{p.productName}</h3>
               <div className="mt-4 flex items-end justify-between">
                 <p className="text-lg font-semibold text-store-clay">₹{p.price?.toLocaleString()}</p>
                 <p className="text-xs text-store-mist">
-                  {p.avgRating?.toFixed?.(1) ?? '—'} ★ · {p.stock} in stock
+                  {p.avgRating?.toFixed?.(1) ?? '4.8'} ★ · {p.stock} in stock
                 </p>
               </div>
             </Link>
