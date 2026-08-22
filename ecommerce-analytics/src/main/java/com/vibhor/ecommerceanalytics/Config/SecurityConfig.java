@@ -1,17 +1,14 @@
-package com.vibhor.ecommerceanalytics.Config;
-
+﻿package com.vibhor.ecommerceanalytics.Config;
 
 import com.vibhor.ecommerceanalytics.Security.JwtAuthenticationFilter;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-
 import org.springframework.security.config.http.SessionCreationPolicy;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -26,11 +23,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-
-
 @Configuration
 public class SecurityConfig {
-
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -38,30 +32,17 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-
-
     @Bean
     public PasswordEncoder passwordEncoder(){
-
         return new BCryptPasswordEncoder();
-
     }
-
-
-
 
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
     ) throws Exception {
-
-
         return configuration.getAuthenticationManager();
-
     }
-
-
-
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -81,8 +62,6 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
-
-
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -144,7 +123,7 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Storefront — shoppers and admins (admins may browse for testing)
+                        // Storefront - shoppers and admins (admins may browse for testing)
                         .requestMatchers("/api/store/**")
                         .hasAnyRole("USER", "ADMIN")
 
@@ -182,6 +161,4 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-
 }
