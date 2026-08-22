@@ -1,4 +1,4 @@
-﻿package com.vibhor.ecommerceanalytics.Service;
+package com.vibhor.ecommerceanalytics.Service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

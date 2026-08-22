@@ -1,4 +1,4 @@
-﻿services:
+services:
   # ============================================================================
   # MySQL 8.0 Database
   # ============================================================================
@@ -10,7 +10,7 @@
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: e_commerce
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
@@ -52,7 +52,7 @@
     container_name: aci-backend
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "8081:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/e_commerce?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root

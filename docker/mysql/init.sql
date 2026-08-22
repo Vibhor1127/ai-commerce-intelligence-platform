@@ -1,4 +1,4 @@
-﻿-- ============================================================================
+-- ============================================================================
 -- E-Commerce Business Intelligence Database Initialization Script
 -- ============================================================================
 
@@ -38,7 +38,9 @@ CREATE TABLE IF NOT EXISTS customers (
     user_id     INT NULL UNIQUE,
     first_name  VARCHAR(50)  NOT NULL,
     last_name   VARCHAR(50)  NULL,
+    email       VARCHAR(150) NULL UNIQUE,
     city        VARCHAR(100) NOT NULL,
+    signup_date DATE         NULL,
     CONSTRAINT fk_customers_user
         FOREIGN KEY (user_id) REFERENCES app_users (user_id)
         ON DELETE SET NULL

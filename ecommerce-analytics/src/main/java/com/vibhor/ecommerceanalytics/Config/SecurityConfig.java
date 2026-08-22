@@ -1,4 +1,4 @@
-﻿package com.vibhor.ecommerceanalytics.Config;
+package com.vibhor.ecommerceanalytics.Config;
 
 import com.vibhor.ecommerceanalytics.Security.JwtAuthenticationFilter;
 
