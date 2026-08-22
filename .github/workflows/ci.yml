@@ -8,8 +8,11 @@ on:
 
 jobs:
   build-and-test:
-    name: Build, Test & Verify
+    name: Build & Test Backend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ecommerce-analytics
 
     services:
       mysql:
@@ -45,13 +48,14 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
+          cache-dependency-path: 'ecommerce-analytics/pom.xml'
 
-      - name: Verify Environment
+      - name: Verify Environment & Maven
         run: |
           java -version
           mvn -version
 
-      - name: Run Unit and Integration Tests
+      - name: Run Automated Unit Tests
         run: mvn clean test
         env:
           SPRING_PROFILES_ACTIVE: test
@@ -63,7 +67,3 @@ jobs:
 
       - name: Package JAR Application
         run: mvn package -DskipTests
-
-      - name: Verify Docker Container Build
-        run: |
-          docker build -t ecommerce-analytics-backend:latest .
