@@ -23,7 +23,7 @@ public class reviews {
     @Column(name = "rating")
     private Integer rating;
 
-    @Column(name = "review_text")
+    @Column(name = "comment")
     private String reviewText;
 
     @Column(name = "review_date")

@@ -117,15 +117,26 @@ public class AdminInventoryService {
 
     @Transactional(readOnly = true)
     public Page<ReviewDTO> listReviews(Integer minRating, Integer maxRating, Pageable pageable) {
-        return reviewRepository.findFiltered(minRating, maxRating, pageable).map(r -> {
-            String name = r.getCustomer().getFirstName()
-                    + (r.getCustomer().getLastName() == null ? "" : " " + r.getCustomer().getLastName());
+        Page<reviews> page;
+        if (minRating != null || maxRating != null) {
+            page = reviewRepository.findFiltered(minRating, maxRating, pageable);
+        } else {
+            page = reviewRepository.findAll(pageable);
+        }
+        return page.map(r -> {
+            String name = "Verified Buyer";
+            if (r.getCustomer() != null) {
+                String first = r.getCustomer().getFirstName() == null ? "" : r.getCustomer().getFirstName();
+                String last = r.getCustomer().getLastName() == null ? "" : r.getCustomer().getLastName();
+                name = (first + " " + last).trim();
+                if (name.isEmpty()) name = "Customer #" + r.getCustomer().getCustomerId();
+            }
             return ReviewDTO.builder()
                     .reviewId(r.getReviewId())
-                    .productId(r.getProduct().getProductId())
-                    .productName(r.getProduct().getProductName())
-                    .customerId(r.getCustomer().getCustomerId())
-                    .customerName(name.trim())
+                    .productId(r.getProduct() == null ? null : r.getProduct().getProductId())
+                    .productName(r.getProduct() == null ? "Product" : r.getProduct().getProductName())
+                    .customerId(r.getCustomer() == null ? null : r.getCustomer().getCustomerId())
+                    .customerName(name)
                     .rating(r.getRating())
                     .reviewText(r.getReviewText())
                     .reviewDate(r.getReviewDate())
@@ -171,17 +182,19 @@ public class AdminInventoryService {
         }
 
         return page.map(o -> {
-            String customerName = "";
+            String customerName = "Guest Customer";
             if (o.getCustomer() != null) {
-                customerName = o.getCustomer().getFirstName()
-                        + (o.getCustomer().getLastName() == null ? "" : " " + o.getCustomer().getLastName());
+                String first = o.getCustomer().getFirstName() == null ? "" : o.getCustomer().getFirstName();
+                String last = o.getCustomer().getLastName() == null ? "" : o.getCustomer().getLastName();
+                customerName = (first + " " + last).trim();
+                if (customerName.isEmpty()) customerName = "Customer #" + o.getCustomer().getCustomerId();
             }
             return RecentOrderDTO.builder()
                     .orderId(o.getOrderId())
                     .customerId(o.getCustomer() == null ? null : o.getCustomer().getCustomerId())
-                    .customerName(customerName.trim())
-                    .totalAmount(o.getTotalAmount())
-                    .status(o.getStatus() == null ? null : o.getStatus().name())
+                    .customerName(customerName)
+                    .totalAmount(o.getTotalAmount() == null ? 0.0 : o.getTotalAmount())
+                    .status(o.getStatus() == null ? "PENDING" : o.getStatus().name())
                     .orderDate(o.getOrderDate())
                     .build();
         });
