@@ -11,52 +11,43 @@ import com.vibhor.ecommerceanalytics.Service.Handler.CapabilityRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
-
+import java.util.concurrent.*;
 
 @Service
 public class AIAnalyticsService {
 
-
-    private static final Logger logger =
-            LoggerFactory.getLogger(
-                    AIAnalyticsService.class
-            );
-
+    private static final Logger logger = LoggerFactory.getLogger(AIAnalyticsService.class);
 
     private final ChatClient chatClient;
-
     private final ObjectMapper objectMapper;
-
     private final CapabilityRegistry capabilityRegistry;
+    private final ExecutorService executor = Executors.newCachedThreadPool();
 
+    @Value("${nvidia.api.key:YOUR_KEY_HERE}")
+    private String nvidiaApiKey;
 
+    @Value("${NVIDIA_API_KEY:}")
+    private String envNvidiaApiKey;
 
     public AIAnalyticsService(
             ChatClient.Builder chatClientBuilder,
             CapabilityRegistry capabilityRegistry
     ) {
-
-
-        this.chatClient =
-                chatClientBuilder.build();
-
-
-        this.objectMapper =
-                new ObjectMapper();
-
+        this.chatClient = chatClientBuilder.build();
+        this.objectMapper = new ObjectMapper();
         this.capabilityRegistry = capabilityRegistry;
-
     }
 
-
-
-
-    public AnalyticsIntent understandQuestion(
-            String question
-    ) {
+    public AnalyticsIntent understandQuestion(String question) {
+        // Fast-path: if API key is not configured or is placeholder, use deterministic heuristics instantly
+        if (!hasValidApiKey()) {
+            logger.info("NVIDIA API key not set or using default placeholder. Using fast deterministic intent heuristic.");
+            return heuristicIntent(question);
+        }
 
 
         // Dynamically generate entity list and operations from registry
@@ -173,22 +164,15 @@ public class AIAnalyticsService {
         try {
 
 
-            aiResponse =
-                    chatClient
-                            .prompt(prompt)
-                            .call()
-                            .content();
-
-
-            logger.info(
-                    "AI Intent Raw Response: {}",
-                    aiResponse
+            CompletableFuture<String> future = CompletableFuture.supplyAsync(
+                    () -> chatClient.prompt(prompt).call().content(),
+                    executor
             );
+            aiResponse = future.get(3500, TimeUnit.MILLISECONDS);
 
+            logger.info("AI Intent Raw Response: {}", aiResponse);
 
-            String rawContent =
-                    aiResponse != null ? aiResponse.trim() : "";
-
+            String rawContent = aiResponse != null ? aiResponse.trim() : "";
             String cleanedResponse = extractJson(rawContent);
 
             AnalyticsIntent parsed = objectMapper.readValue(
@@ -205,11 +189,9 @@ public class AIAnalyticsService {
 
             return parsed;
 
-        }
-        catch(Exception e){
-
+        } catch (Exception e) {
             logger.warn(
-                    "LLM intent parsing unavailable or failed ({}), falling back to deterministic intent heuristics",
+                    "LLM intent parsing unavailable or timed out ({}), falling back to deterministic intent heuristics",
                     e.getMessage()
             );
 
@@ -221,9 +203,14 @@ public class AIAnalyticsService {
             throw new InvalidAIResponseException(
                     "Unable to parse AI generated analytics intent: " + e.getMessage()
             );
-
         }
+    }
 
+    private boolean hasValidApiKey() {
+        if (envNvidiaApiKey != null && !envNvidiaApiKey.isBlank() && !envNvidiaApiKey.contains("YOUR_KEY")) {
+            return true;
+        }
+        return nvidiaApiKey != null && !nvidiaApiKey.isBlank() && !nvidiaApiKey.contains("YOUR_KEY");
     }
 
     private AnalyticsIntent heuristicIntent(String question) {
