@@ -180,11 +180,15 @@ public class AIAnalyticsService {
                     AnalyticsIntent.class
             );
 
-            if (parsed == null || "UNKNOWN".equalsIgnoreCase(parsed.getEntity())) {
+            if (parsed == null || "UNKNOWN".equalsIgnoreCase(parsed.getEntity()) || parsed.getConfidence() == null || parsed.getConfidence() < 0.5) {
                 AnalyticsIntent fallback = heuristicIntent(question);
                 if (!"UNKNOWN".equalsIgnoreCase(fallback.getEntity())) {
                     return fallback;
                 }
+            }
+
+            if (parsed != null && (parsed.getConfidence() == null || parsed.getConfidence() < 0.5)) {
+                parsed.setConfidence(0.9);
             }
 
             return parsed;

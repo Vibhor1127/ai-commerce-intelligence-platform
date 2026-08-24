@@ -56,9 +56,15 @@ public interface AnalyticsCapability {
      * Uses exact operation matching against supportedOperations().
      */
     default boolean supports(AnalyticsIntent intent) {
+        if (intent == null || intent.getEntity() == null) return false;
+        if (!supportedEntity().equalsIgnoreCase(intent.getEntity().trim())) return false;
         String operation = intent.getOperation() == null
-                ? "" : intent.getOperation().toUpperCase();
-        return supportedOperations().contains(operation);
+                ? "" : intent.getOperation().toUpperCase().trim();
+        if (operation.isEmpty() || "UNKNOWN".equalsIgnoreCase(operation) || "SUMMARY".equalsIgnoreCase(operation)
+                || "ANALYTICS".equalsIgnoreCase(operation) || "OVERVIEW".equalsIgnoreCase(operation)) {
+            return true;
+        }
+        return supportedOperations().stream().anyMatch(op -> op.equalsIgnoreCase(operation) || operation.contains(op) || op.contains(operation));
     }
 
     /**
