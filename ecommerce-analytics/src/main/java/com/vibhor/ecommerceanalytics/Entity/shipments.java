@@ -23,14 +23,8 @@ public class shipments {
     @Column(name = "shipment_status")
     private String shipmentStatus;
 
-    @Column(name = "shipped_date")
-    private LocalDate shippedDate;
-
-    @Column(name = "delivery_date")
-    private LocalDate deliveryDate;
-
-    @Column(name = "tracking_number")
-    private String trackingNumber;
+    @Column(name = "shipment_date")
+    private java.time.LocalDateTime shipmentDate;
 
     // ============================================================
     // RELATIONSHIPS

@@ -51,20 +51,4 @@ public class orders {
     // inside orderItem.java
     @OneToMany(mappedBy = "order")
     private List<orderItem> OrderItems;
-
-    // ONE Order has ONE Payment.
-    //
-    // Example:
-    // Order 101
-    //     -> Payment Success
-    @OneToOne(mappedBy = "order")
-    private payments payment;
-
-    // ONE Order has ONE Shipment.
-    //
-    // Example:
-    // Order 101
-    //     -> Tracking ID
-    @OneToOne(mappedBy = "order")
-    private shipments shipment;
 }

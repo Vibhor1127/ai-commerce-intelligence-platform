@@ -46,16 +46,11 @@ public final class OrderMapper {
             items = List.of();
         }
 
-        payments payment = null;
-        try {
-            payment = order.getPayment();
-        } catch (Exception ignored) {}
-
         Address shipping = null;
         try {
             shipping = order.getShippingAddress();
         } catch (Exception ignored) {}
 
-        return toDto(order, items, payment, shipping);
+        return toDto(order, items, null, shipping);
     }
 }
