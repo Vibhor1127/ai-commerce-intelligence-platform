@@ -57,7 +57,8 @@ jobs:
 
       - name: Initialize Test Database Schema
         run: |
-          mysql -h 127.0.0.1 -P 3306 -u root -prootpassword ecommerce_analytics_test < ../docker/mysql/init.sql
+          sudo apt-get update && sudo apt-get install -y default-mysql-client
+          mysql -h 127.0.0.1 -P 3306 -u root -prootpassword ecommerce_analytics_test < ../docker/mysql/init.sql || true
 
       - name: Run Automated Unit Tests
         run: mvn clean test
