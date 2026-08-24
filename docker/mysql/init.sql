@@ -203,9 +203,9 @@ INSERT IGNORE INTO products (product_id, product_name, price, stock, category_id
 (5, 'Ergonomic Mesh Executive Chair with Lumbar Support', 8499.00, 15, 1, 'https://images.unsplash.com/photo-1580481077197-25e2e8584841?w=800&auto=format&fit=crop&q=80'),
 (6, 'Smart Hydro Stainless Steel Thermal Flask 1000ml', 899.00, 120, 2, 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&auto=format&fit=crop&q=80');
 
-INSERT IGNORE INTO customers (customer_id, user_id, first_name, last_name, city) VALUES
-(1, 1, 'Admin', 'User', 'Bengaluru'),
-(2, 2, 'Vibhor', 'Srivastava', 'Lucknow');
+INSERT IGNORE INTO customers (customer_id, user_id, first_name, last_name, email, city) VALUES
+(1, 1, 'Admin', 'User', 'admin@aci-os.local', 'Bengaluru'),
+(2, 2, 'Vibhor', 'Srivastava', 'vibhor@aci-os.local', 'Lucknow');
 
 INSERT IGNORE INTO addresses (address_id, customer_id, line1, city, state, pincode, phone, is_default) VALUES
 (1, 2, 'Flat 402, Royal Palms, Gomti Nagar', 'Lucknow', 'Uttar Pradesh', '226010', '9876543210', TRUE);

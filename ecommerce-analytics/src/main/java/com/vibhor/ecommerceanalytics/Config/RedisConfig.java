@@ -28,9 +28,11 @@ public class RedisConfig {
     public static final String CACHE_INACTIVE_CUSTOMERS = "inactiveCustomers";
     public static final String CACHE_INVENTORY_ALERTS = "inventoryAlerts";
     public static final String CACHE_DASHBOARD = "dashboard";
+    public static final String CACHE_AI_RESPONSE = "aiResponses";
 
     private GenericJacksonJsonRedisSerializer createJsonSerializer() {
         return GenericJacksonJsonRedisSerializer.builder()
+                .enableUnsafeDefaultTyping()
                 .build();
     }
 
@@ -90,6 +92,15 @@ public class RedisConfig {
         cacheConfigs.put(CACHE_CATEGORY_REVENUE, longLived);
         cacheConfigs.put(CACHE_LIFETIME_VALUE, longLived);
         cacheConfigs.put(CACHE_INACTIVE_CUSTOMERS, longLived);
+
+        // AI Response Cache: 30 minutes TTL (same question returns instantly)
+        RedisCacheConfiguration aiCache = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(30))
+                .disableCachingNullValues()
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
+
+        cacheConfigs.put(CACHE_AI_RESPONSE, aiCache);
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

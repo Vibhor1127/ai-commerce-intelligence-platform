@@ -1,6 +1,7 @@
 package com.vibhor.ecommerceanalytics.Controller;
 
 
+import com.vibhor.ecommerceanalytics.Service.AICacheService;
 import com.vibhor.ecommerceanalytics.Service.Handler.AnalyticsCapability;
 import com.vibhor.ecommerceanalytics.Service.Handler.CapabilityRegistry;
 import com.vibhor.ecommerceanalytics.Service.Handler.ValidationResult;
@@ -43,15 +44,18 @@ public class AIController {
     private final AIAnalyticsService aiAnalyticsService;
     private final CapabilityRegistry capabilityRegistry;
     private final AIExplanationService explanationService;
+    private final AICacheService aiCacheService;
 
     public AIController(
             AIAnalyticsService aiAnalyticsService,
             CapabilityRegistry capabilityRegistry,
-            AIExplanationService explanationService
+            AIExplanationService explanationService,
+            AICacheService aiCacheService
     ) {
         this.aiAnalyticsService = aiAnalyticsService;
         this.capabilityRegistry = capabilityRegistry;
         this.explanationService = explanationService;
+        this.aiCacheService = aiCacheService;
     }
 
     @PostMapping("/ask")
@@ -142,7 +146,14 @@ public class AIController {
     public AIExplanationResponse askQuestion(
             @Valid @RequestBody AIQuestionRequest request
     ) {
-
+        // Check AI response cache first (manual StringRedisTemplate — avoids Jackson type-info issues)
+        String cacheKey = normalizeQuestion(request.getQuestion());
+        if (!cacheKey.isBlank()) {
+            AIExplanationResponse cached = aiCacheService.get(cacheKey);
+            if (cached != null) {
+                return cached;
+            }
+        }
 
         AnalyticsIntent intent =
                 aiAnalyticsService
@@ -226,11 +237,18 @@ public class AIController {
 
 
 
-        return explanationService
+        AIExplanationResponse response = explanationService
                 .generateExplanation(
                         request.getQuestion(),
                         analyticsResult
                 );
+
+        // Store in cache for future identical questions
+        if (response != null && !cacheKey.isBlank()) {
+            aiCacheService.put(cacheKey, response);
+        }
+
+        return response;
 
     }
 
@@ -249,6 +267,20 @@ public class AIController {
     }
 
 
+
+    /**
+     * Normalizes a question for Redis cache keying.
+     * Strips punctuation, lowercases, and collapses whitespace so that
+     * near-identical questions ("How many orders?" / "how many orders")
+     * hit the same cache entry.
+     */
+    public static String normalizeQuestion(String question) {
+        if (question == null) return "";
+        return question.toLowerCase()
+                .replaceAll("[^a-z0-9\s]", "")
+                .replaceAll("\s+", " ")
+                .trim();
+    }
 
     private AIExplanationResponse unsupportedResponse(
             String reason
