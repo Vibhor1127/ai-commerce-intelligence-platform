@@ -94,11 +94,18 @@ public class AdminController {
 
     @GetMapping("/orders")
     public Page<RecentOrderDTO> adminOrders(
-            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String search,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return adminInventoryService.listOrders(status, search, pageable);
+        OrderStatus orderStatus = null;
+        if (status != null && !status.isBlank()) {
+            try {
+                orderStatus = OrderStatus.valueOf(status.trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return adminInventoryService.listOrders(orderStatus, search, pageable);
     }
 
     @PatchMapping("/orders/{id}/status")

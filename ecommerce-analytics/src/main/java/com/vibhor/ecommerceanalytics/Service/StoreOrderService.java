@@ -1,6 +1,7 @@
 package com.vibhor.ecommerceanalytics.Service;
 
 import com.vibhor.ecommerceanalytics.DTO.OrderDTO;
+import com.vibhor.ecommerceanalytics.Entity.User;
 import com.vibhor.ecommerceanalytics.Entity.orders;
 import com.vibhor.ecommerceanalytics.Exception.ResourceNotFoundException;
 import com.vibhor.ecommerceanalytics.Repository.OrderRepository;
@@ -30,9 +31,13 @@ public class StoreOrderService {
 
     @Transactional(readOnly = true)
     public OrderDTO myOrder(Integer orderId) {
+        User user = storeCustomerService.currentUser();
         var customer = storeCustomerService.requireCustomer();
         orders order = orderRepository.findByOrderIdAndCustomer_CustomerId(orderId, customer.getCustomerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+                .or(() -> ("ADMIN".equalsIgnoreCase(user.getRole()) || "ANALYST".equalsIgnoreCase(user.getRole()))
+                        ? orderRepository.findById(orderId)
+                        : java.util.Optional.empty())
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: #" + orderId));
         return OrderMapper.toDto(order);
     }
 }

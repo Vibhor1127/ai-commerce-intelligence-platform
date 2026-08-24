@@ -29,7 +29,10 @@ public class AdminUserService {
 
     @Transactional(readOnly = true)
     public Page<UserSummaryDTO> listUsers(String search, Pageable pageable) {
-        return userRepository.findByUsernameContainingIgnoreCase(search, pageable)
+        if (search == null || search.trim().isEmpty()) {
+            return userRepository.findAll(pageable).map(this::toDto);
+        }
+        return userRepository.findByUsernameContainingIgnoreCase(search.trim(), pageable)
                 .map(this::toDto);
     }
 
@@ -59,7 +62,7 @@ public class AdminUserService {
                 .username(user.getUsername())
                 .role(user.getRole())
                 .linkedCustomer(customer.isPresent())
-                .customerEmail(customer.map(customers::getEmail).orElse(null))
+                .customerEmail(customer.map(customers::getEmail).orElse(user.getUsername() + "@aci-commerce.internal"))
                 .build();
     }
 }

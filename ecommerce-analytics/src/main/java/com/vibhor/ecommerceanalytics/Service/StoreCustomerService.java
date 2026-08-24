@@ -35,8 +35,16 @@ public class StoreCustomerService {
     public customers requireCustomer() {
         User user = currentUser();
         return customerRepository.findByUserId(user.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "No customer profile linked to this account. Register as USER first."));
+                .orElseGet(() -> {
+                    customers c = new customers();
+                    c.setUserId(user.getUserId());
+                    c.setFirstName(user.getUsername());
+                    c.setLastName(user.getRole() == null ? "User" : user.getRole());
+                    c.setEmail(user.getUsername() + "@aci-commerce.internal");
+                    c.setCity("Mumbai");
+                    c.setSignupDate(java.time.LocalDate.now());
+                    return customerRepository.save(c);
+                });
     }
 
     public CustomerProfileDTO getProfile() {
