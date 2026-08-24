@@ -39,13 +39,9 @@ public class CapabilityRegistry {
     public Optional<AnalyticsCapability> resolve(
             AnalyticsIntent intent
     ){
-
-
         if(intent.getEntity()==null){
             return Optional.empty();
         }
-
-
 
         List<AnalyticsCapability> handlers =
                 capabilities.get(
@@ -53,21 +49,17 @@ public class CapabilityRegistry {
                                 .toUpperCase()
                 );
 
-
-
-        if(handlers==null){
+        if(handlers==null || handlers.isEmpty()){
             return Optional.empty();
         }
-
-
 
         return handlers
                 .stream()
                 .filter(
                         h -> h.supports(intent)
                 )
-                .findFirst();
-
+                .findFirst()
+                .or(() -> Optional.of(handlers.get(0)));
     }
 
 
