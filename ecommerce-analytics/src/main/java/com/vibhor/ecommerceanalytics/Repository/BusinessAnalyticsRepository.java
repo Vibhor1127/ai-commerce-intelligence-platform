@@ -1,16 +1,71 @@
 package com.vibhor.ecommerceanalytics.Repository;
 
-import com.vibhor.ecommerceanalytics.DTO.*;
 import com.vibhor.ecommerceanalytics.Entity.customers;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface BusinessAnalyticsRepository
         extends JpaRepository<customers, Integer> {
+
+    // ============================================================
+    // PROJECTIONS
+    // ============================================================
+
+    interface TopCustomerProjection {
+        Integer getCustomerId();
+        String getCustomerName();
+        BigDecimal getTotalSpending();
+    }
+
+    interface TopProductProjection {
+        Integer getProductId();
+        String getProductName();
+        BigDecimal getQuantity();
+        BigDecimal getRevenue();
+    }
+
+    interface MonthlyRevenueProjection {
+        Integer getYear();
+        Integer getMonth();
+        BigDecimal getRevenue();
+    }
+
+    interface CategoryRevenueProjection {
+        Integer getCategoryId();
+        String getCategoryName();
+        BigDecimal getRevenue();
+    }
+
+    interface CustomerLifetimeValueProjection {
+        Integer getCustomerId();
+        String getCustomerName();
+        BigDecimal getLifetimeValue();
+    }
+
+    interface InactiveCustomerProjection {
+        Integer getCustomerId();
+        String getCustomerName();
+        LocalDateTime getLastOrderDate();
+    }
+
+    interface InventoryAlertProjection {
+        Integer getProductId();
+        String getProductName();
+        Integer getStock();
+    }
+
+    interface DashboardProjection {
+        BigDecimal getTotalRevenue();
+        Long getTotalOrders();
+        Long getTotalCustomers();
+        Long getTotalProducts();
+    }
 
     // ============================================================
     // TOP CUSTOMERS
@@ -27,7 +82,7 @@ public interface BusinessAnalyticsRepository
         GROUP BY c.customer_id, c.first_name
         ORDER BY totalSpending DESC
         """, nativeQuery = true)
-    List<TopCustomerDTO> getTopcustomers();
+    List<TopCustomerProjection> getTopcustomers();
 
 
     // ============================================================
@@ -46,15 +101,11 @@ public interface BusinessAnalyticsRepository
         GROUP BY p.product_id, p.product_name
         ORDER BY Revenue DESC
         """, nativeQuery = true)
-    List<TopProductsDTO> getTopProducts();
+    List<TopProductProjection> getTopProducts();
 
 
     // ============================================================
     // LOW PERFORMING PRODUCTS
-    // Same shape as TOP PRODUCTS, sorted ascending instead of descending,
-    // limited to products that actually have order history (so a brand
-    // new product with zero sales doesn't drown out genuinely weak ones --
-    // adjust/remove the HAVING clause if you want zero-sale products included).
     // ============================================================
 
     @Query(value = """
@@ -71,7 +122,7 @@ public interface BusinessAnalyticsRepository
         ORDER BY Revenue ASC
         LIMIT 10
         """, nativeQuery = true)
-    List<TopProductsDTO> getLowPerformingProducts();
+    List<TopProductProjection> getLowPerformingProducts();
 
 
     // ============================================================
@@ -87,7 +138,7 @@ public interface BusinessAnalyticsRepository
         GROUP BY YEAR(order_date), MONTH(order_date)
         ORDER BY year, month
         """, nativeQuery = true)
-    List<MonthlyRevenueDTO> getMonthlyRevenue();
+    List<MonthlyRevenueProjection> getMonthlyRevenue();
 
 
     // ============================================================
@@ -107,7 +158,7 @@ public interface BusinessAnalyticsRepository
         GROUP BY c.category_id, c.category_name
         ORDER BY revenue DESC
         """, nativeQuery = true)
-    List<CategoryRevenueDTO> getCategoryRevenue();
+    List<CategoryRevenueProjection> getCategoryRevenue();
 
 
     // ============================================================
@@ -125,12 +176,11 @@ public interface BusinessAnalyticsRepository
         GROUP BY c.customer_id, c.first_name, c.last_name
         ORDER BY lifetimeValue DESC
         """, nativeQuery = true)
-    List<CustomerLifetimeValueDTO> getCustomerLifetimeValue();
+    List<CustomerLifetimeValueProjection> getCustomerLifetimeValue();
 
 
     // ============================================================
     // INACTIVE CUSTOMERS
-    // Customers whose latest order is older than 90 days
     // ============================================================
 
     @Query(value = """
@@ -145,7 +195,7 @@ public interface BusinessAnalyticsRepository
         HAVING MAX(o.order_date) < DATE_SUB(NOW(), INTERVAL 90 DAY)
         ORDER BY lastOrderDate
         """, nativeQuery = true)
-    List<InactiveCustomerDTO> getInactiveCustomers();
+    List<InactiveCustomerProjection> getInactiveCustomers();
 
 
     // ============================================================
@@ -168,7 +218,7 @@ public interface BusinessAnalyticsRepository
     AND i.stock_after <= 10
     ORDER BY i.stock_after ASC
     """, nativeQuery = true)
-    List<InventoryAlertDTO> getInventoryAlerts();
+    List<InventoryAlertProjection> getInventoryAlerts();
 
 
     // ============================================================
@@ -183,5 +233,5 @@ public interface BusinessAnalyticsRepository
             (SELECT COUNT(*) FROM products) AS totalProducts
         FROM orders
         """, nativeQuery = true)
-    DashboardDTO getDashboard();
-}
+    DashboardProjection getDashboard();
+}

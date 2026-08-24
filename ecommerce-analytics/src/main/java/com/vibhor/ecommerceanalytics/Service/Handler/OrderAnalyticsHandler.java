@@ -30,10 +30,10 @@ public class OrderAnalyticsHandler implements AnalyticsCapability {
     @Override
     public List<String> supportedOperations() {
         return List.of(
-                "CANCELLED_ORDERS",
                 "ORDER_TRENDS",
+                "RECENT_ORDERS",
                 "CUSTOMER_ORDER_FREQUENCY",
-                "RECENT_ORDERS"
+                "CANCELLED_ORDERS"
         );
     }
 
@@ -45,7 +45,18 @@ public class OrderAnalyticsHandler implements AnalyticsCapability {
     @Override
     public AnalyticsResult execute(AnalyticsIntent intent) {
         String operation = intent.getOperation() == null
-                ? "CANCELLED_ORDERS" : intent.getOperation().toUpperCase();
+                ? "ORDER_TRENDS" : intent.getOperation().toUpperCase();
+
+        if (operation.contains("CANCEL") || operation.contains("REFUND") || operation.contains("RETURN")) {
+            var data = orderAnalyticsRepository.getCancelledOrders();
+            return AnalyticsResult.builder()
+                    .entity("ORDER")
+                    .operation("CANCELLED_ORDERS")
+                    .data(data)
+                    .dataDescription("List of cancelled, returned, or refunded orders")
+                    .recordCount(data.size())
+                    .build();
+        }
 
         if (operation.contains("RECENT") || operation.contains("LATEST")) {
             int limit = extractLimit(intent, 15);
@@ -59,17 +70,6 @@ public class OrderAnalyticsHandler implements AnalyticsCapability {
                     .build();
         }
 
-        if (operation.contains("TREND") || operation.contains("VOLUME") || operation.contains("MONTH")) {
-            var data = orderAnalyticsRepository.getOrderTrends();
-            return AnalyticsResult.builder()
-                    .entity("ORDER")
-                    .operation("ORDER_TRENDS")
-                    .data(data)
-                    .dataDescription("Order volume, completion, and cancellation statistics aggregated over time")
-                    .recordCount(data.size())
-                    .build();
-        }
-
         if (operation.contains("FREQUENCY") || operation.contains("REPEAT")) {
             var data = orderAnalyticsRepository.getCustomerOrderFrequency();
             return AnalyticsResult.builder()
@@ -77,17 +77,6 @@ public class OrderAnalyticsHandler implements AnalyticsCapability {
                     .operation("CUSTOMER_ORDER_FREQUENCY")
                     .data(data)
                     .dataDescription("Customer purchase frequency ranking with total orders and average order value")
-                    .recordCount(data.size())
-                    .build();
-        }
-
-        if (operation.contains("CANCEL") || operation.contains("REFUND") || operation.contains("RETURN")) {
-            var data = orderAnalyticsRepository.getCancelledOrders();
-            return AnalyticsResult.builder()
-                    .entity("ORDER")
-                    .operation("CANCELLED_ORDERS")
-                    .data(data)
-                    .dataDescription("List of cancelled, returned, or refunded orders")
                     .recordCount(data.size())
                     .build();
         }
@@ -106,12 +95,13 @@ public class OrderAnalyticsHandler implements AnalyticsCapability {
                     .build();
         }
 
-        var data = orderAnalyticsRepository.getCancelledOrders();
+        // Default: ORDER_TRENDS (Order volume, completion, cancellation rates, and monthly revenue)
+        var data = orderAnalyticsRepository.getOrderTrends();
         return AnalyticsResult.builder()
                 .entity("ORDER")
-                .operation("CANCELLED_ORDERS")
+                .operation("ORDER_TRENDS")
                 .data(data)
-                .dataDescription("List of cancelled, returned, or refunded orders")
+                .dataDescription("Order volume, completion, and cancellation statistics aggregated over time")
                 .recordCount(data.size())
                 .build();
     }

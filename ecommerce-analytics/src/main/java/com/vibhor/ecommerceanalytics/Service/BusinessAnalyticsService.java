@@ -26,7 +26,13 @@ public class BusinessAnalyticsService {
     @Cacheable(RedisConfig.CACHE_TOP_CUSTOMERS)
     public List<TopCustomerDTO> getTopCustomers() {
         try {
-            return businessAnalyticsRepository.getTopcustomers();
+            return businessAnalyticsRepository.getTopcustomers().stream()
+                    .map(p -> new TopCustomerDTO(
+                            p.getCustomerId(),
+                            p.getCustomerName(),
+                            p.getTotalSpending()
+                    ))
+                    .toList();
         } catch (DataAccessException e) {
             throw new AnalyticsDataAccessException("Failed to fetch customer analytics", e);
         }
@@ -35,7 +41,14 @@ public class BusinessAnalyticsService {
     @Cacheable(RedisConfig.CACHE_TOP_PRODUCTS)
     public List<TopProductsDTO> getTopProducts() {
         try {
-            return businessAnalyticsRepository.getTopProducts();
+            return businessAnalyticsRepository.getTopProducts().stream()
+                    .map(p -> new TopProductsDTO(
+                            p.getProductId(),
+                            p.getProductName(),
+                            p.getQuantity(),
+                            p.getRevenue()
+                    ))
+                    .toList();
         } catch (DataAccessException e) {
             throw new AnalyticsDataAccessException("Failed to fetch product analytics", e);
         }
@@ -44,7 +57,14 @@ public class BusinessAnalyticsService {
     @Cacheable(RedisConfig.CACHE_LOW_PRODUCTS)
     public List<TopProductsDTO> getLowPerformingProducts() {
         try {
-            return businessAnalyticsRepository.getLowPerformingProducts();
+            return businessAnalyticsRepository.getLowPerformingProducts().stream()
+                    .map(p -> new TopProductsDTO(
+                            p.getProductId(),
+                            p.getProductName(),
+                            p.getQuantity(),
+                            p.getRevenue()
+                    ))
+                    .toList();
         } catch (DataAccessException e) {
             throw new AnalyticsDataAccessException("Failed to fetch low performing products", e);
         }
@@ -53,7 +73,13 @@ public class BusinessAnalyticsService {
     @Cacheable(RedisConfig.CACHE_MONTHLY_REVENUE)
     public List<MonthlyRevenueDTO> getMonthlyRevenue() {
         try {
-            return businessAnalyticsRepository.getMonthlyRevenue();
+            return businessAnalyticsRepository.getMonthlyRevenue().stream()
+                    .map(p -> new MonthlyRevenueDTO(
+                            p.getYear(),
+                            p.getMonth(),
+                            p.getRevenue()
+                    ))
+                    .toList();
         } catch (DataAccessException e) {
             throw new AnalyticsDataAccessException("Failed to fetch revenue analytics", e);
         }
@@ -62,7 +88,13 @@ public class BusinessAnalyticsService {
     @Cacheable(RedisConfig.CACHE_CATEGORY_REVENUE)
     public List<CategoryRevenueDTO> getCategoryRevenue() {
         try {
-            return businessAnalyticsRepository.getCategoryRevenue();
+            return businessAnalyticsRepository.getCategoryRevenue().stream()
+                    .map(p -> new CategoryRevenueDTO(
+                            p.getCategoryId(),
+                            p.getCategoryName(),
+                            p.getRevenue()
+                    ))
+                    .toList();
         } catch (DataAccessException e) {
             throw new AnalyticsDataAccessException("Failed to fetch category revenue analytics", e);
         }
@@ -71,7 +103,13 @@ public class BusinessAnalyticsService {
     @Cacheable(RedisConfig.CACHE_LIFETIME_VALUE)
     public List<CustomerLifetimeValueDTO> getCustomerLifetimeValue() {
         try {
-            return businessAnalyticsRepository.getCustomerLifetimeValue();
+            return businessAnalyticsRepository.getCustomerLifetimeValue().stream()
+                    .map(p -> new CustomerLifetimeValueDTO(
+                            p.getCustomerId(),
+                            p.getCustomerName(),
+                            p.getLifetimeValue()
+                    ))
+                    .toList();
         } catch (DataAccessException e) {
             throw new AnalyticsDataAccessException("Failed to fetch customer lifetime value", e);
         }
@@ -80,7 +118,13 @@ public class BusinessAnalyticsService {
     @Cacheable(RedisConfig.CACHE_INACTIVE_CUSTOMERS)
     public List<InactiveCustomerDTO> getInactiveCustomers() {
         try {
-            return businessAnalyticsRepository.getInactiveCustomers();
+            return businessAnalyticsRepository.getInactiveCustomers().stream()
+                    .map(p -> new InactiveCustomerDTO(
+                            p.getCustomerId(),
+                            p.getCustomerName(),
+                            p.getLastOrderDate()
+                    ))
+                    .toList();
         } catch (DataAccessException e) {
             throw new AnalyticsDataAccessException("Failed to fetch inactive customers", e);
         }
@@ -89,7 +133,13 @@ public class BusinessAnalyticsService {
     @Cacheable(RedisConfig.CACHE_INVENTORY_ALERTS)
     public List<InventoryAlertDTO> getInventoryAlerts() {
         try {
-            return businessAnalyticsRepository.getInventoryAlerts();
+            return businessAnalyticsRepository.getInventoryAlerts().stream()
+                    .map(p -> new InventoryAlertDTO(
+                            p.getProductId(),
+                            p.getProductName(),
+                            p.getStock()
+                    ))
+                    .toList();
         } catch (DataAccessException e) {
             throw new AnalyticsDataAccessException("Failed to fetch inventory alerts", e);
         }
@@ -98,7 +148,16 @@ public class BusinessAnalyticsService {
     @Cacheable(RedisConfig.CACHE_DASHBOARD)
     public DashboardDTO getDashboard() {
         try {
-            return businessAnalyticsRepository.getDashboard();
+            var p = businessAnalyticsRepository.getDashboard();
+            if (p == null) {
+                return new DashboardDTO(java.math.BigDecimal.ZERO, 0L, 0L, 0L);
+            }
+            return new DashboardDTO(
+                    p.getTotalRevenue() != null ? p.getTotalRevenue() : java.math.BigDecimal.ZERO,
+                    p.getTotalOrders() != null ? p.getTotalOrders() : 0L,
+                    p.getTotalCustomers() != null ? p.getTotalCustomers() : 0L,
+                    p.getTotalProducts() != null ? p.getTotalProducts() : 0L
+            );
         } catch (DataAccessException e) {
             throw new AnalyticsDataAccessException("Failed to fetch dashboard analytics", e);
         }

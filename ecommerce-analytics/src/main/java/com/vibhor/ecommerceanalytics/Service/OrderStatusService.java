@@ -32,9 +32,13 @@ public class OrderStatusService {
 
     static {
         Map<OrderStatus, Set<OrderStatus>> map = new EnumMap<>(OrderStatus.class);
-        map.put(OrderStatus.PENDING, Set.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
-        map.put(OrderStatus.PROCESSING, Set.of(OrderStatus.COMPLETED, OrderStatus.CANCELLED));
-        map.put(OrderStatus.COMPLETED, Set.of(OrderStatus.REFUNDED));
+        map.put(OrderStatus.PENDING, Set.of(OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.CANCELLED));
+        map.put(OrderStatus.CONFIRMED, Set.of(OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.CANCELLED));
+        map.put(OrderStatus.PROCESSING, Set.of(OrderStatus.SHIPPED, OrderStatus.COMPLETED, OrderStatus.CANCELLED));
+        map.put(OrderStatus.SHIPPED, Set.of(OrderStatus.DELIVERED, OrderStatus.COMPLETED, OrderStatus.RETURNED, OrderStatus.CANCELLED));
+        map.put(OrderStatus.DELIVERED, Set.of(OrderStatus.COMPLETED, OrderStatus.RETURNED, OrderStatus.REFUNDED));
+        map.put(OrderStatus.COMPLETED, Set.of(OrderStatus.RETURNED, OrderStatus.REFUNDED));
+        map.put(OrderStatus.RETURNED, Set.of(OrderStatus.REFUNDED));
         map.put(OrderStatus.CANCELLED, Set.of());
         map.put(OrderStatus.REFUNDED, Set.of());
         VALID_TRANSITIONS = Collections.unmodifiableMap(map);
@@ -87,8 +91,8 @@ public class OrderStatusService {
         history.setChangedAt(LocalDateTime.now());
         historyRepository.save(history);
 
-        // Perform inventory restock for cancellations and refunds
-        if (newStatus == OrderStatus.CANCELLED || newStatus == OrderStatus.REFUNDED) {
+        // Perform inventory restock for cancellations, refunds, and returns
+        if (newStatus == OrderStatus.CANCELLED || newStatus == OrderStatus.REFUNDED || newStatus == OrderStatus.RETURNED) {
             restockInventory(order);
         }
 
