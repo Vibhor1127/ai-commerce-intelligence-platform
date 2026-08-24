@@ -191,62 +191,222 @@ function AddressStep({
   onBack: () => void
   onNext: () => void
 }) {
+  const qc = useQueryClient()
+  const toast = useToast()
+  const [showAddForm, setShowAddForm] = useState(addresses.length === 0)
+  const [newAddr, setNewAddr] = useState({
+    line1: '',
+    line2: '',
+    city: '',
+    state: '',
+    pincode: '',
+    phone: '',
+    isDefault: true,
+  })
+
+  const addAddressMutation = useMutation({
+    mutationFn: (body: Omit<AddressDTO, 'addressId'>) => api.addAddress(body),
+    onSuccess: (created) => {
+      qc.invalidateQueries({ queryKey: ['addresses'] })
+      if (created?.addressId) {
+        onSelect(created.addressId)
+      }
+      setShowAddForm(false)
+      toast.push('Delivery address added successfully', 'ok')
+    },
+    onError: (e: Error) => toast.push(e.message || 'Failed to add address', 'err'),
+  })
+
   const defaultAddr = addresses.find((a) => a.isDefault)
+  const effectiveSelectedId = selectedId ?? defaultAddr?.addressId ?? null
+  const canProceed = Boolean(effectiveSelectedId) && !showAddForm
 
   function handleNext() {
-    if (!selectedId && defaultAddr) {
-      onSelect(defaultAddr.addressId)
+    if (!effectiveSelectedId) {
+      toast.push('Please select or add a delivery address to continue', 'err')
+      return
+    }
+    if (!selectedId && effectiveSelectedId) {
+      onSelect(effectiveSelectedId)
     }
     onNext()
   }
 
+  function handleSaveAddress(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newAddr.line1 || !newAddr.city || !newAddr.state || !newAddr.pincode || !newAddr.phone) {
+      toast.push('Please fill in all required address fields', 'err')
+      return
+    }
+    addAddressMutation.mutate(newAddr)
+  }
+
   return (
     <div className="space-y-4">
-      <p className="text-sm text-store-mist">Select a saved delivery address.</p>
-      {addresses.length === 0 ? (
-        <p className="text-sm text-store-mist">No saved addresses. Add one from your profile first.</p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-store-ink">Delivery Address</p>
+        {addresses.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="text-xs font-semibold text-store-clay hover:underline"
+          >
+            {showAddForm ? '← Select from saved' : '+ Add new address'}
+          </button>
+        )}
+      </div>
+
+      {showAddForm ? (
+        <form onSubmit={handleSaveAddress} className="space-y-3 rounded-2xl border border-store-ink/10 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wider text-store-mist">Enter Delivery Details</p>
+          <div>
+            <label className="block text-xs font-medium text-store-ink">Street Address / Flat / Building *</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Flat 402, Royal Palms, Gomti Nagar"
+              value={newAddr.line1}
+              onChange={(e) => setNewAddr({ ...newAddr, line1: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-store-ink/15 px-3 py-2 text-sm focus:border-store-clay focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-store-ink">Landmark / Locality (Optional)</label>
+            <input
+              type="text"
+              placeholder="e.g. Near City Center"
+              value={newAddr.line2}
+              onChange={(e) => setNewAddr({ ...newAddr, line2: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-store-ink/15 px-3 py-2 text-sm focus:border-store-clay focus:outline-none"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-store-ink">City *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Lucknow"
+                value={newAddr.city}
+                onChange={(e) => setNewAddr({ ...newAddr, city: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-store-ink/15 px-3 py-2 text-sm focus:border-store-clay focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-store-ink">State *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Uttar Pradesh"
+                value={newAddr.state}
+                onChange={(e) => setNewAddr({ ...newAddr, state: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-store-ink/15 px-3 py-2 text-sm focus:border-store-clay focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-store-ink">Pincode *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. 226010"
+                value={newAddr.pincode}
+                onChange={(e) => setNewAddr({ ...newAddr, pincode: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-store-ink/15 px-3 py-2 text-sm focus:border-store-clay focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-store-ink">Contact Phone Number *</label>
+              <input
+                type="tel"
+                required
+                placeholder="e.g. 9876543210"
+                value={newAddr.phone}
+                onChange={(e) => setNewAddr({ ...newAddr, phone: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-store-ink/15 px-3 py-2 text-sm focus:border-store-clay focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            {addresses.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                className="rounded-lg border border-store-ink/15 px-4 py-2 text-xs text-store-mist"
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={addAddressMutation.isPending}
+              className="rounded-lg bg-store-clay px-5 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            >
+              {addAddressMutation.isPending ? 'Saving...' : 'Save & Use Address'}
+            </button>
+          </div>
+        </form>
+      ) : addresses.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-store-clay/40 bg-store-clay/5 p-6 text-center">
+          <p className="text-sm font-medium text-store-ink">No delivery addresses found</p>
+          <p className="mt-1 text-xs text-store-mist">Please add your shipping address to proceed to payment.</p>
+          <button
+            type="button"
+            onClick={() => setShowAddForm(true)}
+            className="mt-4 inline-flex items-center rounded-lg bg-store-clay px-4 py-2 text-xs font-semibold text-white"
+          >
+            + Add Delivery Address
+          </button>
+        </div>
       ) : (
         <div className="space-y-2">
-          {addresses.map((addr) => (
-            <label
-              key={addr.addressId}
-              className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 ${
-                selectedId === addr.addressId || (!selectedId && addr.isDefault)
-                  ? 'border-store-clay bg-store-clay/5'
-                  : 'border-store-ink/8 bg-white'
-              }`}
-            >
-              <input
-                type="radio"
-                name="address"
-                checked={selectedId === addr.addressId || (!selectedId && addr.isDefault)}
-                onChange={() => onSelect(addr.addressId)}
-                className="mt-1"
-              />
-              <div className="text-sm">
-                <p className="font-medium text-store-ink">
-                  {addr.line1}
-                  {addr.line2 ? `, ${addr.line2}` : ''}
-                </p>
-                <p className="text-store-mist">
-                  {addr.city}, {addr.state} {addr.pincode}
-                </p>
-                <p className="text-store-mist">{addr.phone}</p>
-                {addr.isDefault && <span className="text-[10px] text-store-clay">Default</span>}
-              </div>
-            </label>
-          ))}
+          {addresses.map((addr) => {
+            const isChecked = effectiveSelectedId === addr.addressId
+            return (
+              <label
+                key={addr.addressId}
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-all ${
+                  isChecked ? 'border-store-clay bg-store-clay/5 shadow-sm' : 'border-store-ink/8 bg-white hover:border-store-ink/20'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="address"
+                  checked={isChecked}
+                  onChange={() => onSelect(addr.addressId)}
+                  className="mt-1 text-store-clay"
+                />
+                <div className="text-sm flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-store-ink">
+                      {addr.line1}
+                      {addr.line2 ? `, ${addr.line2}` : ''}
+                    </p>
+                    {addr.isDefault && (
+                      <span className="rounded bg-store-clay/10 px-1.5 py-0.5 text-[10px] font-bold text-store-clay">Default</span>
+                    )}
+                  </div>
+                  <p className="text-store-mist">
+                    {addr.city}, {addr.state} — {addr.pincode}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-store-ink/80">📞 {addr.phone}</p>
+                </div>
+              </label>
+            )
+          })}
         </div>
       )}
-      <div className="pt-4 flex justify-between">
+
+      <div className="pt-4 flex justify-between items-center">
         <button type="button" onClick={onBack} className="rounded-lg border border-store-ink/15 px-4 py-2 text-sm text-store-mist">
           ← Back
         </button>
         <button
           type="button"
           onClick={handleNext}
-          disabled={addresses.length > 0 && !selectedId && !defaultAddr}
-          className="rounded-lg bg-store-clay px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          disabled={!canProceed}
+          className="rounded-lg bg-store-clay px-6 py-2.5 text-sm font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-40"
         >
           Continue to Payment →
         </button>
