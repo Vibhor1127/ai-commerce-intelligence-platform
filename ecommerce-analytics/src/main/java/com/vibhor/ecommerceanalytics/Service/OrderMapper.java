@@ -20,8 +20,8 @@ public final class OrderMapper {
                 .paymentMethod(payment == null ? null : payment.getPaymentMethod())
                 .items(items == null ? List.of() : items.stream().map(oi ->
                         OrderDTO.OrderItemDTO.builder()
-                                .productId(oi.getProduct().getProductId())
-                                .productName(oi.getProduct().getProductName())
+                                .productId(oi.getProduct() == null ? null : oi.getProduct().getProductId())
+                                .productName(oi.getProduct() == null ? "Product" : oi.getProduct().getProductName())
                                 .quantity(oi.getQuantity())
                                 .price(oi.getPrice())
                                 .build()
@@ -39,7 +39,23 @@ public final class OrderMapper {
     }
 
     public static OrderDTO toDto(orders order) {
-        List<orderItem> items = order.getOrderItems() == null ? List.of() : order.getOrderItems();
-        return toDto(order, items, order.getPayment(), order.getShippingAddress());
+        List<orderItem> items;
+        try {
+            items = order.getOrderItems() == null ? List.of() : order.getOrderItems();
+        } catch (Exception e) {
+            items = List.of();
+        }
+
+        payments payment = null;
+        try {
+            payment = order.getPayment();
+        } catch (Exception ignored) {}
+
+        Address shipping = null;
+        try {
+            shipping = order.getShippingAddress();
+        } catch (Exception ignored) {}
+
+        return toDto(order, items, payment, shipping);
     }
 }

@@ -261,14 +261,51 @@ function AddressForm({
   const [state, setState] = useState(existing?.state ?? '')
   const [pincode, setPincode] = useState(existing?.pincode ?? '')
   const [phone, setPhone] = useState(existing?.phone ?? '')
+  const [phoneError, setPhoneError] = useState('')
+  const [pincodeError, setPincodeError] = useState('')
+
+  function handlePhoneChange(val: string) {
+    const cleaned = val.replace(/\D/g, '').slice(0, 10)
+    setPhone(cleaned)
+    if (cleaned.length > 0 && cleaned.length < 10) {
+      setPhoneError('Phone number must be 10 digits')
+    } else if (cleaned.length === 10 && !/^[6-9]/.test(cleaned)) {
+      setPhoneError('Must start with 6, 7, 8, or 9')
+    } else {
+      setPhoneError('')
+    }
+  }
+
+  function handlePincodeChange(val: string) {
+    const cleaned = val.replace(/\D/g, '').slice(0, 6)
+    setPincode(cleaned)
+    if (cleaned.length > 0 && cleaned.length < 6) {
+      setPincodeError('Pincode must be 6 digits')
+    } else {
+      setPincodeError('')
+    }
+  }
+
+  const isValid =
+    line1.trim().length > 0 &&
+    city.trim().length > 0 &&
+    state.trim().length > 0 &&
+    /^\d{6}$/.test(pincode) &&
+    /^[6-9]\d{9}$/.test(phone)
 
   const save = useMutation({
     mutationFn: () => {
-      const body = { line1, line2, city, state, pincode, phone }
+      if (!/^[6-9]\d{9}$/.test(phone)) {
+        throw new Error('Please enter a valid 10-digit Indian phone number starting with 6-9.')
+      }
+      if (!/^\d{6}$/.test(pincode)) {
+        throw new Error('Please enter a valid 6-digit postal pincode.')
+      }
+      const body = { line1: line1.trim(), line2: line2.trim(), city: city.trim(), state: state.trim(), pincode: pincode.trim(), phone: phone.trim() }
       return existing ? api.updateAddress(existing.addressId, body) : api.addAddress(body)
     },
     onSuccess: () => {
-      toast.push(existing ? 'Address updated' : 'Address added')
+      toast.push(existing ? 'Address updated' : 'Address added', 'ok')
       onSuccess()
     },
     onError: (e: Error) => toast.push(e.message, 'err'),
@@ -276,27 +313,69 @@ function AddressForm({
 
   return (
     <div className="rounded-xl border border-store-clay/30 bg-white p-4">
-      <p className="text-sm font-medium">{existing ? 'Edit Address' : 'New Address'}</p>
+      <p className="text-sm font-medium">{existing ? 'Edit Address' : 'New Delivery Address'}</p>
       <div className="mt-3 space-y-2">
-        <input value={line1} onChange={(e) => setLine1(e.target.value)} placeholder="Address line 1" className="w-full rounded-lg border border-store-ink/15 px-3 py-2 text-sm" />
-        <input value={line2} onChange={(e) => setLine2(e.target.value)} placeholder="Address line 2 (optional)" className="w-full rounded-lg border border-store-ink/15 px-3 py-2 text-sm" />
+        <input
+          value={line1}
+          onChange={(e) => setLine1(e.target.value)}
+          placeholder="House / Flat No., Building, Street *"
+          className="w-full rounded-lg border border-store-ink/15 px-3 py-2 text-sm focus:border-store-clay focus:outline-none"
+        />
+        <input
+          value={line2}
+          onChange={(e) => setLine2(e.target.value)}
+          placeholder="Landmark / Area (optional)"
+          className="w-full rounded-lg border border-store-ink/15 px-3 py-2 text-sm focus:border-store-clay focus:outline-none"
+        />
         <div className="grid grid-cols-2 gap-2">
-          <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" className="rounded-lg border border-store-ink/15 px-3 py-2 text-sm" />
-          <input value={state} onChange={(e) => setState(e.target.value)} placeholder="State" className="rounded-lg border border-store-ink/15 px-3 py-2 text-sm" />
+          <input
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="City / District *"
+            className="rounded-lg border border-store-ink/15 px-3 py-2 text-sm focus:border-store-clay focus:outline-none"
+          />
+          <input
+            value={state}
+            onChange={(e) => setState(e.target.value)}
+            placeholder="State *"
+            className="rounded-lg border border-store-ink/15 px-3 py-2 text-sm focus:border-store-clay focus:outline-none"
+          />
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <input value={pincode} onChange={(e) => setPincode(e.target.value)} placeholder="Pincode" className="rounded-lg border border-store-ink/15 px-3 py-2 text-sm" />
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className="rounded-lg border border-store-ink/15 px-3 py-2 text-sm" />
+          <div>
+            <input
+              value={pincode}
+              maxLength={6}
+              onChange={(e) => handlePincodeChange(e.target.value)}
+              placeholder="Pincode (6 digits) *"
+              className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
+                pincodeError ? 'border-red-500' : 'border-store-ink/15 focus:border-store-clay'
+              }`}
+            />
+            {pincodeError && <p className="mt-0.5 text-[10px] text-red-500">{pincodeError}</p>}
+          </div>
+          <div>
+            <input
+              value={phone}
+              maxLength={10}
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              placeholder="Phone (10 digits) *"
+              className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
+                phoneError ? 'border-red-500' : 'border-store-ink/15 focus:border-store-clay'
+              }`}
+            />
+            {phoneError && <p className="mt-0.5 text-[10px] text-red-500">{phoneError}</p>}
+          </div>
         </div>
       </div>
       <div className="mt-3 flex gap-2">
         <button
           type="button"
           onClick={() => save.mutate()}
-          disabled={save.isPending || !line1 || !city || !state || !pincode || !phone}
+          disabled={save.isPending || !isValid}
           className="rounded-lg bg-store-clay px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
-          {save.isPending ? 'Saving…' : 'Save'}
+          {save.isPending ? 'Saving…' : 'Save Address'}
         </button>
         <button type="button" onClick={onClose} className="rounded-lg border border-store-ink/15 px-4 py-2 text-sm text-store-mist">
           Cancel

@@ -15,23 +15,16 @@ public interface OrderRepository extends JpaRepository<orders, Integer> {
 
     Optional<orders> findByOrderIdAndCustomer_CustomerId(Integer orderId, Integer customerId);
 
-    /**
-     * Admin search: filter by status (optional) and search by order ID or customer name.
-     * Search matches against order_id (exact numeric) or customer first/last name (LIKE).
-     */
+    Page<orders> findAllByOrderByOrderDateDesc(Pageable pageable);
+
+    Page<orders> findByStatusOrderByOrderDateDesc(OrderStatus status, Pageable pageable);
+
     @Query("""
         SELECT o FROM orders o
         LEFT JOIN o.customer c
-        WHERE (:status IS NULL OR o.status = :status)
-          AND (:search IS NULL OR :search = ''
-               OR CAST(o.orderId AS string) = :search
-               OR LOWER(c.firstName) LIKE LOWER(CONCAT('%', :search, '%'))
+        WHERE (LOWER(c.firstName) LIKE LOWER(CONCAT('%', :search, '%'))
                OR LOWER(c.lastName) LIKE LOWER(CONCAT('%', :search, '%')))
         ORDER BY o.orderDate DESC
         """)
-    Page<orders> searchAdmin(
-            @Param("status") OrderStatus status,
-            @Param("search") String search,
-            Pageable pageable
-    );
+    Page<orders> searchByCustomerName(@Param("search") String search, Pageable pageable);
 }

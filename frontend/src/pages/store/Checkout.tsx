@@ -232,13 +232,54 @@ function AddressStep({
     onNext()
   }
 
+  const [phoneError, setPhoneError] = useState('')
+  const [pincodeError, setPincodeError] = useState('')
+
+  function handlePhoneChange(val: string) {
+    const cleaned = val.replace(/\D/g, '').slice(0, 10)
+    setNewAddr({ ...newAddr, phone: cleaned })
+    if (cleaned.length > 0 && cleaned.length < 10) {
+      setPhoneError('Phone number must be 10 digits')
+    } else if (cleaned.length === 10 && !/^[6-9]/.test(cleaned)) {
+      setPhoneError('Must start with 6, 7, 8, or 9')
+    } else {
+      setPhoneError('')
+    }
+  }
+
+  function handlePincodeChange(val: string) {
+    const cleaned = val.replace(/\D/g, '').slice(0, 6)
+    setNewAddr({ ...newAddr, pincode: cleaned })
+    if (cleaned.length > 0 && cleaned.length < 6) {
+      setPincodeError('Pincode must be 6 digits')
+    } else {
+      setPincodeError('')
+    }
+  }
+
   function handleSaveAddress(e: React.FormEvent) {
     e.preventDefault()
-    if (!newAddr.line1 || !newAddr.city || !newAddr.state || !newAddr.pincode || !newAddr.phone) {
+    if (!newAddr.line1.trim() || !newAddr.city.trim() || !newAddr.state.trim()) {
       toast.push('Please fill in all required address fields', 'err')
       return
     }
-    addAddressMutation.mutate(newAddr)
+    if (!/^[6-9]\d{9}$/.test(newAddr.phone)) {
+      toast.push('Please enter a valid 10-digit Indian mobile number starting with 6-9', 'err')
+      return
+    }
+    if (!/^\d{6}$/.test(newAddr.pincode)) {
+      toast.push('Please enter a valid 6-digit postal pincode', 'err')
+      return
+    }
+    addAddressMutation.mutate({
+      line1: newAddr.line1.trim(),
+      line2: newAddr.line2.trim(),
+      city: newAddr.city.trim(),
+      state: newAddr.state.trim(),
+      pincode: newAddr.pincode.trim(),
+      phone: newAddr.phone.trim(),
+      isDefault: newAddr.isDefault,
+    })
   }
 
   return (
@@ -306,26 +347,34 @@ function AddressStep({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-store-ink">Pincode *</label>
+              <label className="block text-xs font-medium text-store-ink">Pincode (6 digits) *</label>
               <input
                 type="text"
                 required
+                maxLength={6}
                 placeholder="e.g. 226010"
                 value={newAddr.pincode}
-                onChange={(e) => setNewAddr({ ...newAddr, pincode: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-store-ink/15 px-3 py-2 text-sm focus:border-store-clay focus:outline-none"
+                onChange={(e) => handlePincodeChange(e.target.value)}
+                className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
+                  pincodeError ? 'border-red-500' : 'border-store-ink/15 focus:border-store-clay'
+                }`}
               />
+              {pincodeError && <p className="mt-0.5 text-[10px] text-red-500">{pincodeError}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-store-ink">Contact Phone Number *</label>
+              <label className="block text-xs font-medium text-store-ink">Contact Phone (10 digits) *</label>
               <input
                 type="tel"
                 required
+                maxLength={10}
                 placeholder="e.g. 9876543210"
                 value={newAddr.phone}
-                onChange={(e) => setNewAddr({ ...newAddr, phone: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-store-ink/15 px-3 py-2 text-sm focus:border-store-clay focus:outline-none"
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
+                  phoneError ? 'border-red-500' : 'border-store-ink/15 focus:border-store-clay'
+                }`}
               />
+              {phoneError && <p className="mt-0.5 text-[10px] text-red-500">{phoneError}</p>}
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
@@ -340,7 +389,14 @@ function AddressStep({
             )}
             <button
               type="submit"
-              disabled={addAddressMutation.isPending}
+              disabled={
+                addAddressMutation.isPending ||
+                !newAddr.line1 ||
+                !newAddr.city ||
+                !newAddr.state ||
+                !/^\d{6}$/.test(newAddr.pincode) ||
+                !/^[6-9]\d{9}$/.test(newAddr.phone)
+              }
               className="rounded-lg bg-store-clay px-5 py-2 text-xs font-semibold text-white disabled:opacity-50"
             >
               {addAddressMutation.isPending ? 'Saving...' : 'Save & Use Address'}

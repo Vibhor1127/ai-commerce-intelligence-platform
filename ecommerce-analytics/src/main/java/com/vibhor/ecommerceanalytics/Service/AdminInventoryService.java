@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class AdminInventoryService {
@@ -152,7 +153,24 @@ public class AdminInventoryService {
 
     @Transactional(readOnly = true)
     public Page<RecentOrderDTO> listOrders(OrderStatus status, String search, Pageable pageable) {
-        return orderRepository.searchAdmin(status, search, pageable).map(o -> {
+        Page<orders> page;
+        if (search != null && !search.trim().isEmpty()) {
+            String s = search.trim();
+            try {
+                int orderId = Integer.parseInt(s);
+                page = orderRepository.findById(orderId)
+                        .map(o -> (Page<orders>) new org.springframework.data.domain.PageImpl<>(List.of(o), pageable, 1))
+                        .orElseGet(() -> orderRepository.searchByCustomerName(s, pageable));
+            } catch (NumberFormatException e) {
+                page = orderRepository.searchByCustomerName(s, pageable);
+            }
+        } else if (status != null) {
+            page = orderRepository.findByStatusOrderByOrderDateDesc(status, pageable);
+        } else {
+            page = orderRepository.findAllByOrderByOrderDateDesc(pageable);
+        }
+
+        return page.map(o -> {
             String customerName = "";
             if (o.getCustomer() != null) {
                 customerName = o.getCustomer().getFirstName()
