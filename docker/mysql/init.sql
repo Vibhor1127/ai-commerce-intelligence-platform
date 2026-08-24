@@ -89,10 +89,12 @@ CREATE TABLE IF NOT EXISTS cart_items (
 
 -- 7. Orders
 CREATE TABLE IF NOT EXISTS orders (
-    order_id    INT AUTO_INCREMENT PRIMARY KEY,
-    customer_id INT NOT NULL,
-    order_date  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status      VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    order_id            INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id         INT NOT NULL,
+    order_date          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status              VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    total_amount        DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    shipping_address_id INT NULL,
     CONSTRAINT fk_orders_customer
         FOREIGN KEY (customer_id) REFERENCES customers (customer_id)
 );
@@ -103,7 +105,8 @@ CREATE TABLE IF NOT EXISTS order_items (
     order_id      INT NOT NULL,
     product_id    INT NOT NULL,
     quantity      INT NOT NULL,
-    unit_price    DECIMAL(10,2) NOT NULL,
+    price         DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    unit_price    DECIMAL(10,2) NULL DEFAULT 0.00,
     CONSTRAINT fk_order_items_order
         FOREIGN KEY (order_id) REFERENCES orders (order_id)
         ON DELETE CASCADE,
