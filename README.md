@@ -13,7 +13,8 @@
 ![Docker](https://img.shields.io/badge/Docker-Multi--Container-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-Frontend_Live-000000?style=for-the-badge&logo=vercel&logoColor=white)
 ![Render](https://img.shields.io/badge/Render-Backend_Live-46E3B7?style=for-the-badge&logo=render&logoColor=white)
-![Tests](https://img.shields.io/badge/JUnit_5_Tests-21_Passed-22C55E?style=for-the-badge&logo=junit5&logoColor=white)
+![Tests](https://img.shields.io/badge/JUnit_5_Tests-27_Passed-22C55E?style=for-the-badge&logo=junit5&logoColor=white)
+![Catalog](https://img.shields.io/badge/Catalog-50_Products_Live-3B82F6?style=for-the-badge&logo=shopify&logoColor=white)
 
 <br/>
 
@@ -286,33 +287,41 @@ stateDiagram-v2
 * Yields **> 98% reduction in latency** (dropping database execution times from ~85ms down to **1.8ms** on cache hits).
 
 ### 3. 🎨 Dual-Persona Responsive Frontend
-* 🛍️ **Shopper Storefront (`/store`):** Warm glassmorphism aesthetic with real-time cart drawer, address selection, instant order checkout, and review submission.
-* 🌌 **Executive Intelligence Cockpit (`/console`):** Futuristic dark cyberpunk terminal with interactive 3D Data Galaxy (Three.js), natural language query execution, and real-time inventory ledger adjustment.
+* 🛍️ **Shopper Storefront (`/store`):** Warm glassmorphism aesthetic with real-time cart drawer, address management with **Indian 10-digit mobile & 6-digit pincode security validation**, atomic checkout, order tracking, and **interactive 1-to-5 star customer reviews**.
+* 🌌 **Executive Intelligence Cockpit (`/console`):** Futuristic dark cyberpunk terminal with interactive 3D Data Galaxy (Three.js), natural language query execution, customer management, and real-time inventory ledger adjustment.
+
+### 4. 📦 50+ Verified Master Product Catalog
+* **Diverse Domain Categorization:** Fully populated 50 high-demand SKU catalog spanning **Electronics**, **Sports & Fitness**, **Home & Kitchen**, **Fashion & Apparel**, and **Toys & RC Vehicles**.
+* **High-Res Unconstrained Photography:** Every SKU is linked to dedicated, responsive photography with stock level tracking and automated restock alerts.
 
 ---
 
-## 🧪 Automated Test Suite (21/21 Passing)
+## 🧪 Automated Test Suite (27/27 Passing)
 
-The project includes an end-to-end automated test suite utilizing **JUnit 5**, **Mockito**, and **Spring Test**:
+The project includes an end-to-end automated test suite utilizing **JUnit 5**, **Mockito**, and **Spring Boot JPA Integration Tests**:
 
 ```text
 -------------------------------------------------------
  T E S T S   E X E C U T I O N   S U M M A R Y
 -------------------------------------------------------
 [INFO] Running AI SQL Guardrail Security Unit Tests
-[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0  (Time: 0.519 s)
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0  (Time: 0.162 s)
 [INFO] Running Analytics Engine & Redis Caching Unit Tests
-[INFO] Tests run: 2,  Failures: 0, Errors: 0, Skipped: 0  (Time: 2.524 s)
+[INFO] Tests run: 2,  Failures: 0, Errors: 0, Skipped: 0  (Time: 1.250 s)
 [INFO] Running Authentication & JWT Security Unit Tests
-[INFO] Tests run: 2,  Failures: 0, Errors: 0, Skipped: 0  (Time: 0.059 s)
+[INFO] Tests run: 2,  Failures: 0, Errors: 0, Skipped: 0  (Time: 0.113 s)
 [INFO] Running Checkout Service & Inventory Deduction Unit Tests
-[INFO] Tests run: 2,  Failures: 0, Errors: 0, Skipped: 0  (Time: 0.779 s)
+[INFO] Tests run: 2,  Failures: 0, Errors: 0, Skipped: 0  (Time: 1.126 s)
 [INFO] Running Order Status State Machine & Restock Unit Tests
-[INFO] Tests run: 3,  Failures: 0, Errors: 0, Skipped: 0  (Time: 0.139 s)
+[INFO] Tests run: 3,  Failures: 0, Errors: 0, Skipped: 0  (Time: 0.189 s)
+[INFO] Running Order Repository JPA Integration & Address Security Tests
+[INFO] Tests run: 5,  Failures: 0, Errors: 0, Skipped: 0  (Time: 0.612 s)
+[INFO] Running Application Context Lifecycle Tests
+[INFO] Tests run: 1,  Failures: 0, Errors: 0, Skipped: 0  (Time: 21.42 s)
 -------------------------------------------------------
 [INFO] Results:
-[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0
-[INFO] BUILD SUCCESS (100% Pass Rate)
+[INFO] Tests run: 27, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS (100% Pass Rate across Unit & Integration Suites)
 -------------------------------------------------------
 ```
 
@@ -362,7 +371,9 @@ Interactive Swagger UI & OpenAPI 3.0 Documentation is accessible at:
 | **Analytics** | `GET` | `/analytics/dashboard` | `AUTHENTICATED` | Executive KPI cards with Redis caching |
 | **Analytics** | `GET` | `/analytics/monthly-revenue`| `AUTHENTICATED`| Month-over-month revenue stream |
 | **Analytics** | `GET` | `/analytics/top-customers` | `AUTHENTICATED` | Top spenders & customer ranking |
-| **Storefront** | `GET` | `/api/store/products` | `USER, ADMIN` | Paginated & filtered product catalog |
+| **Storefront** | `GET` | `/api/store/products` | `USER, ADMIN` | Paginated & filtered 50-item product catalog |
+| **Storefront** | `GET` | `/api/store/products/{id}/reviews` | `USER, ADMIN` | Verified customer reviews & rating breakdown |
+| **Storefront** | `POST`| `/api/store/reviews` | `USER, ADMIN` | Submit verified product review & star rating |
 | **Storefront** | `POST`| `/api/store/checkout` | `USER, ADMIN` | Atomic cart checkout & stock reduction |
 | **Admin Console**| `PATCH`| `/api/admin/orders/{id}/status` | `ADMIN` | Transition order status with audit trail |
 | **Admin Console**| `PATCH`| `/api/admin/inventory/{id}` | `ADMIN` | Adjust product inventory with reason logging|
