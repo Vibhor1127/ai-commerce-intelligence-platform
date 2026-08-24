@@ -20,7 +20,7 @@ public interface ReviewAnalyticsRepository extends JpaRepository<reviews, Intege
             c.customer_id AS customerId,
             CONCAT(c.first_name, ' ', COALESCE(c.last_name, '')) AS customerName,
             r.rating AS rating,
-            r.review_text AS reviewText,
+            r.comment AS reviewText,
             r.review_date AS reviewDate
         FROM reviews r
         JOIN products p ON r.product_id = p.product_id

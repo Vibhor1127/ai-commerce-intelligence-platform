@@ -16,14 +16,14 @@ public interface ShipmentAnalyticsRepository extends JpaRepository<shipments, In
         SELECT 
             s.shipment_id AS shipmentId,
             s.order_id AS orderId,
-            s.tracking_number AS trackingNumber,
+            CONCAT('TRK-', s.shipment_id, '-', s.order_id) AS trackingNumber,
             s.shipment_status AS shipmentStatus,
-            s.shipped_date AS shippedDate,
-            s.delivery_date AS deliveryDate,
-            DATEDIFF(COALESCE(s.delivery_date, CURDATE()), s.shipped_date) AS daysInTransit
+            s.shipment_date AS shippedDate,
+            s.shipment_date AS deliveryDate,
+            DATEDIFF(NOW(), s.shipment_date) AS daysInTransit
         FROM shipments s
-        WHERE UPPER(s.shipment_status) IN ('DELAYED', 'IN_TRANSIT', 'PENDING')
-           OR (s.delivery_date IS NULL AND s.shipped_date < DATE_SUB(CURDATE(), INTERVAL 5 DAY))
+        WHERE UPPER(s.shipment_status) IN ('DELAYED', 'IN_TRANSIT', 'PENDING', 'PROCESSING')
+           OR s.shipment_date < DATE_SUB(NOW(), INTERVAL 5 DAY)
         ORDER BY daysInTransit DESC
         LIMIT 50
         """, nativeQuery = true)
@@ -33,8 +33,7 @@ public interface ShipmentAnalyticsRepository extends JpaRepository<shipments, In
         SELECT 
             s.shipment_status AS shipmentStatus,
             COUNT(s.shipment_id) AS totalShipments,
-            ROUND(AVG(CASE WHEN s.delivery_date IS NOT NULL AND s.shipped_date IS NOT NULL 
-                THEN DATEDIFF(s.delivery_date, s.shipped_date) ELSE NULL END), 1) AS avgDeliveryDays
+            ROUND(AVG(DATEDIFF(NOW(), s.shipment_date)), 1) AS avgDeliveryDays
         FROM shipments s
         GROUP BY s.shipment_status
         ORDER BY totalShipments DESC

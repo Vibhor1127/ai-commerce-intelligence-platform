@@ -29,9 +29,9 @@ public class PaymentAnalyticsHandler implements AnalyticsCapability {
     @Override
     public List<String> supportedOperations() {
         return List.of(
-                "FAILED_PAYMENTS",
                 "PAYMENT_METHOD_ANALYSIS",
-                "PAYMENT_SUCCESS_RATE"
+                "PAYMENT_SUCCESS_RATE",
+                "FAILED_PAYMENTS"
         );
     }
 
@@ -43,15 +43,15 @@ public class PaymentAnalyticsHandler implements AnalyticsCapability {
     @Override
     public AnalyticsResult execute(AnalyticsIntent intent) {
         String operation = intent.getOperation() == null
-                ? "FAILED_PAYMENTS" : intent.getOperation().toUpperCase();
+                ? "PAYMENT_METHOD_ANALYSIS" : intent.getOperation().toUpperCase();
 
-        if (operation.contains("METHOD") || operation.contains("BREAKDOWN")) {
-            var data = paymentAnalyticsRepository.getPaymentMethodStats();
+        if (operation.contains("FAIL") || operation.contains("ERROR") || operation.contains("DECLINE")) {
+            var data = paymentAnalyticsRepository.getFailedPayments();
             return AnalyticsResult.builder()
                     .entity("PAYMENT")
-                    .operation("PAYMENT_METHOD_ANALYSIS")
+                    .operation("FAILED_PAYMENTS")
                     .data(data)
-                    .dataDescription("Payment transaction metrics broken down by payment method")
+                    .dataDescription("Recent failed payment transactions with order and method details")
                     .recordCount(data.size())
                     .build();
         }
@@ -67,13 +67,13 @@ public class PaymentAnalyticsHandler implements AnalyticsCapability {
                     .build();
         }
 
-        // Default: failed payments
-        var data = paymentAnalyticsRepository.getFailedPayments();
+        // Default: payment method analysis across all transactions
+        var data = paymentAnalyticsRepository.getPaymentMethodStats();
         return AnalyticsResult.builder()
                 .entity("PAYMENT")
-                .operation("FAILED_PAYMENTS")
+                .operation("PAYMENT_METHOD_ANALYSIS")
                 .data(data)
-                .dataDescription("Recent failed payment transactions with order and method details")
+                .dataDescription("Payment transaction metrics, volumes, and distribution broken down by payment method")
                 .recordCount(data.size())
                 .build();
     }
