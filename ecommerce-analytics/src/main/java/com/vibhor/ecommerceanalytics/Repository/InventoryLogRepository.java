@@ -14,4 +14,6 @@ public interface InventoryLogRepository extends JpaRepository<inventoryLogs, Int
         SELECT MAX(change_date) FROM inventory_logs WHERE product_id = :productId
         """, nativeQuery = true)
     Optional<LocalDateTime> findLastChangeDate(@Param("productId") Integer productId);
+
+    void deleteByProductProductId(Integer productId);
 }

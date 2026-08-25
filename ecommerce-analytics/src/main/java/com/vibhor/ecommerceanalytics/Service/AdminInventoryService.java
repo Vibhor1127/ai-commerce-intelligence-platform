@@ -4,6 +4,7 @@ import com.vibhor.ecommerceanalytics.DTO.*;
 import com.vibhor.ecommerceanalytics.Entity.*;
 import com.vibhor.ecommerceanalytics.Exception.ResourceNotFoundException;
 import com.vibhor.ecommerceanalytics.Repository.*;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -69,6 +70,32 @@ public class AdminInventoryService {
 
         evictProductCaches();
         return toCard(p);
+    }
+
+    @Transactional(readOnly = true)
+    public ProductCardDTO getProduct(Integer productId) {
+        products p = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        return toCard(p);
+    }
+
+    @Transactional
+    public void deleteProduct(Integer productId) {
+        products p = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        // Delete associated inventory logs first
+        inventoryLogRepository.deleteByProductProductId(productId);
+
+        try {
+            productRepository.delete(p);
+            evictProductCaches();
+        } catch (DataIntegrityViolationException e) {
+            throw new DataIntegrityViolationException(
+                "Cannot delete product: it has associated orders or reviews. " +
+                "Remove related records first or archive instead."
+            );
+        }
     }
 
     @Transactional

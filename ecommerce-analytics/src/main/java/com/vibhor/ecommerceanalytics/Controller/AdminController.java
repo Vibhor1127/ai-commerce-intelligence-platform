@@ -80,12 +80,23 @@ public class AdminController {
         return adminInventoryService.createProduct(request);
     }
 
+    @GetMapping("/products/{id}")
+    public ProductCardDTO getProduct(@PathVariable Integer id) {
+        return adminInventoryService.getProduct(id);
+    }
+
     @PatchMapping("/products/{id}")
     public ProductCardDTO updateProduct(
             @PathVariable Integer id,
             @Valid @RequestBody AdminProductRequest request
     ) {
         return adminInventoryService.updateProduct(id, request);
+    }
+
+    @DeleteMapping("/products/{id}")
+    public Map<String, String> deleteProduct(@PathVariable Integer id) {
+        adminInventoryService.deleteProduct(id);
+        return Map.of("message", "Product deleted successfully", "productId", String.valueOf(id));
     }
 
     // ============================================================
@@ -143,6 +154,11 @@ public class AdminController {
         return adminUserService.listUsers(search, pageable);
     }
 
+    @GetMapping("/users/{id}")
+    public UserSummaryDTO getUser(@PathVariable Integer id) {
+        return adminUserService.getUser(id);
+    }
+
     @PatchMapping("/users/{id}/role")
     public UserSummaryDTO updateUserRole(
             @PathVariable Integer id,
@@ -154,5 +170,19 @@ public class AdminController {
             throw new IllegalArgumentException("role is required");
         }
         return adminUserService.updateRole(id, role.trim().toUpperCase(), username);
+    }
+
+    @PatchMapping("/users/{id}")
+    public UserSummaryDTO updateUser(
+            @PathVariable Integer id,
+            @RequestBody Map<String, String> body
+    ) {
+        return adminUserService.updateUser(id, body);
+    }
+
+    @DeleteMapping("/users/{id}")
+    public Map<String, String> deleteUser(@PathVariable Integer id) {
+        adminUserService.deleteUser(id);
+        return Map.of("message", "User deleted successfully", "userId", String.valueOf(id));
     }
 }
