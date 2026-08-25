@@ -4,6 +4,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Line,
   LineChart,
   Pie,
@@ -27,8 +28,12 @@ const TOOLTIP = {
 
 const COLORS = ['#00F5FF', '#8B5CF6', '#10B981', '#F59E0B', '#67e8f9', '#c4b5fd']
 
+function truncate(s: string, max: number) {
+  return s.length > max ? s.slice(0, max - 1) + '…' : s
+}
+
 function ChartBox({ children, height = 220 }: { children: React.ReactNode; height?: number }) {
-  return <div style={{ height }} className="w-full">{children}</div>
+  return <div style={{ height: Math.max(height, 220) }} className="w-full overflow-hidden">{children}</div>
 }
 
 export function EvidenceVisualizer({ evidence }: { evidence: unknown }) {
@@ -73,18 +78,18 @@ function renderChart(entity: string, operation: string, rows: Record<string, unk
 
   if (entity === 'INVENTORY') {
     const data = rows.map((row) => ({
-      name: String(pick(row, 'productName') ?? 'SKU'),
+      name: truncate(String(pick(row, 'productName') ?? 'SKU'), 32),
       value: toNumber(pick(row, 'stock')),
     }))
     return (
-      <ChartBox>
+      <ChartBox height={Math.max(220, data.length * 38 + 40)}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ left: 24, right: 12 }}>
-            <CartesianGrid horizontal={false} />
-            <XAxis type="number" tickLine={false} axisLine={false} />
-            <YAxis type="category" dataKey="name" width={110} tickLine={false} axisLine={false} />
+          <BarChart data={data} layout="vertical" margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+            <CartesianGrid horizontal={false} stroke="rgba(255,255,255,0.06)" />
+            <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+            <YAxis type="category" dataKey="name" width={180} tickLine={false} axisLine={false} tick={{ fill: '#F4EFE6', fontSize: 11 }} />
             <Tooltip contentStyle={TOOLTIP} />
-            <Bar dataKey="value" name="Stock" fill="#F59E0B" radius={[0, 3, 3, 0]} />
+            <Bar dataKey="value" name="Stock" fill="#F59E0B" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </ChartBox>
@@ -197,23 +202,28 @@ function SpendBars({
   label: string
   currency?: boolean
 }) {
+  const truncatedData = data.map((d) => ({ ...d, name: truncate(d.name, 32) }))
+  const chartHeight = Math.max(220, data.length * 38 + 40)
+
   return (
-    <ChartBox>
+    <ChartBox height={chartHeight}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid vertical={false} />
-          <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} tick={{ fontSize: 10 }} />
+        <BarChart data={truncatedData} layout="vertical" margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+          <CartesianGrid horizontal={false} stroke="rgba(255,255,255,0.06)" />
+          <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
           <YAxis
+            type="category"
+            dataKey="name"
+            width={180}
             tickLine={false}
             axisLine={false}
-            width={48}
-            tickFormatter={(v) => (currency ? `${Math.round(Number(v) / 1000)}k` : String(v))}
+            tick={{ fill: '#F4EFE6', fontSize: 11 }}
           />
           <Tooltip
             contentStyle={TOOLTIP}
             formatter={(value) => [currency ? inr(value) : String(value), label]}
           />
-          <Bar dataKey="value" fill="#00F5FF" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="value" fill="#00F5FF" radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </ChartBox>
@@ -221,16 +231,43 @@ function SpendBars({
 }
 
 function Donut({ data }: { data: { name: string; value: number }[] }) {
+  const total = data.reduce((sum, d) => sum + d.value, 0)
+
   return (
-    <ChartBox height={210}>
+    <ChartBox height={260}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
-          <Pie data={data} dataKey="value" nameKey="name" innerRadius={52} outerRadius={78} paddingAngle={3}>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="45%"
+            innerRadius={48}
+            outerRadius={80}
+            paddingAngle={3}
+            label={({ name, value }) => {
+              const pct = total > 0 ? Math.round((value / total) * 100) : 0
+              return `${truncate(name, 16)} (${pct}%)`
+            }}
+            labelLine={{ stroke: 'rgba(255,255,255,0.3)', strokeWidth: 1 }}
+          >
             {data.map((_, i) => (
               <Cell key={i} fill={COLORS[i % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip contentStyle={TOOLTIP} />
+          <Tooltip
+            contentStyle={TOOLTIP}
+            formatter={(value: number, name: string) => {
+              const pct = total > 0 ? Math.round((value / total) * 100) : 0
+              return [`${value} (${pct}%)`, name]
+            }}
+          />
+          <Legend
+            verticalAlign="bottom"
+            iconSize={8}
+            formatter={(val: string) => truncate(val, 20)}
+          />
         </PieChart>
       </ResponsiveContainer>
     </ChartBox>
@@ -239,15 +276,16 @@ function Donut({ data }: { data: { name: string; value: number }[] }) {
 
 function Trend({ data }: { data: { name: string; value: number }[] }) {
   return (
-    <ChartBox>
+    <ChartBox height={240}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid vertical={false} />
-          <XAxis dataKey="name" tickLine={false} axisLine={false} />
+          <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
+          <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
           <YAxis
             tickLine={false}
             axisLine={false}
             width={48}
+            tick={{ fill: '#94a3b8', fontSize: 11 }}
             tickFormatter={(v) => `${Math.round(Number(v) / 1000)}k`}
           />
           <Tooltip contentStyle={TOOLTIP} formatter={(v) => [inr(v), 'Revenue']} />

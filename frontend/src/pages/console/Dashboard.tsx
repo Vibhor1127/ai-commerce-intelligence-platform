@@ -235,17 +235,23 @@ export function ConsoleDashboardPage() {
           <span className="holo-edge" />
           <p className="text-sm font-semibold text-bone">Fulfillment Distribution</p>
           <p className="mono-label text-[10px] mb-3">Order lifecycle ratios</p>
-          <div className="h-56">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={orderStatusData}
                   cx="50%"
-                  cy="50%"
-                  innerRadius={45}
-                  outerRadius={70}
-                  paddingAngle={5}
+                  cy="42%"
+                  innerRadius={48}
+                  outerRadius={78}
+                  paddingAngle={4}
                   dataKey="value"
+                  label={({ name, value }) => {
+                    const total = orderStatusData.reduce((s, d) => s + d.value, 0)
+                    const pct = total > 0 ? Math.round((value / total) * 100) : 0
+                    return pct > 0 ? `${name} ${pct}%` : name
+                  }}
+                  labelLine={{ stroke: 'rgba(255,255,255,0.25)', strokeWidth: 1 }}
                 >
                   {orderStatusData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
@@ -254,16 +260,23 @@ export function ConsoleDashboardPage() {
                 <Tooltip
                   contentStyle={{
                     background: '#0B1020',
-                    border: '1px solid #334155',
+                    border: '1px solid rgba(0,245,255,0.25)',
                     borderRadius: '8px',
-                    color: '#FFFFFF',
+                    color: '#F4EFE6',
                     fontSize: '12px',
+                    fontFamily: 'IBM Plex Mono',
+                    padding: '8px 12px',
+                  }}
+                  formatter={(value: number, name: string) => {
+                    const total = orderStatusData.reduce((s, d) => s + d.value, 0)
+                    const pct = total > 0 ? Math.round((value / total) * 100) : 0
+                    return [`${value} orders (${pct}%)`, name]
                   }}
                 />
                 <Legend
                   verticalAlign="bottom"
-                  iconSize={8}
-                  formatter={(val) => <span className="text-[11px] text-mute">{val}</span>}
+                  iconSize={10}
+                  formatter={(val) => <span className="text-[12px] font-medium text-bone">{val}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
