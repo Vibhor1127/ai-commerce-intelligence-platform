@@ -34,6 +34,7 @@ class CheckoutServiceTest {
     @Mock private ProductRepository productRepository;
     @Mock private InventoryLogRepository inventoryLogRepository;
     @Mock private OrderStatusService orderStatusService;
+    @Mock private JsonCacheService cache;
 
     private CheckoutService checkoutService;
 
@@ -48,7 +49,8 @@ class CheckoutServiceTest {
                 paymentRepository,
                 productRepository,
                 inventoryLogRepository,
-                orderStatusService
+                orderStatusService,
+                cache
         );
     }
 

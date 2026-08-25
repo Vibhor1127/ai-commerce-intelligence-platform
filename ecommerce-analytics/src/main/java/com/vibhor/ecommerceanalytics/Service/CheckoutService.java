@@ -32,6 +32,7 @@ public class CheckoutService {
     private final ProductRepository productRepository;
     private final InventoryLogRepository inventoryLogRepository;
     private final OrderStatusService orderStatusService;
+    private final JsonCacheService cache;
 
     public CheckoutService(
             CartService cartService,
@@ -42,7 +43,8 @@ public class CheckoutService {
             PaymentRepository paymentRepository,
             ProductRepository productRepository,
             InventoryLogRepository inventoryLogRepository,
-            OrderStatusService orderStatusService
+            OrderStatusService orderStatusService,
+            JsonCacheService cache
     ) {
         this.cartService = cartService;
         this.storeCustomerService = storeCustomerService;
@@ -53,6 +55,7 @@ public class CheckoutService {
         this.productRepository = productRepository;
         this.inventoryLogRepository = inventoryLogRepository;
         this.orderStatusService = orderStatusService;
+        this.cache = cache;
     }
 
     @Transactional
@@ -131,6 +134,10 @@ public class CheckoutService {
             orderStatusService.transition(order.getOrderId(), OrderStatus.CANCELLED, username, "Payment failed");
         }
         cartService.clearCart(cart);
+
+        // Evict all analytics caches — order counts, revenue, inventory, and dashboard KPIs
+        cache.evictAll("analytics");
+        cache.evictAll("dashboard");
 
         return OrderMapper.toDto(order, savedItems, payment, shipping);
     }

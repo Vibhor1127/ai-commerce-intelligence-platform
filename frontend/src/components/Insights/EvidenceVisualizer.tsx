@@ -32,6 +32,11 @@ function truncate(s: string, max: number) {
   return s.length > max ? s.slice(0, max - 1) + '…' : s
 }
 
+// Aggressively truncate for chart axes to prevent overlapping
+function axisLabel(s: string) {
+  return truncate(s, 20)
+}
+
 function ChartBox({ children, height = 220 }: { children: React.ReactNode; height?: number }) {
   return <div style={{ height: Math.max(height, 220) }} className="w-full overflow-hidden">{children}</div>
 }
@@ -73,21 +78,21 @@ function renderChart(entity: string, operation: string, rows: Record<string, unk
       value: toNumber(pick(row, 'revenue', 'Revenue')),
       qty: toNumber(pick(row, 'quantity', 'Quantity')),
     }))
-    return <SpendBars data={data} label="Revenue" />
+    return <SpendBars data={data} label="Revenue" truncateNames={20} />
   }
 
   if (entity === 'INVENTORY') {
     const data = rows.map((row) => ({
-      name: truncate(String(pick(row, 'productName') ?? 'SKU'), 32),
+      name: axisLabel(String(pick(row, 'productName') ?? 'SKU')),
       value: toNumber(pick(row, 'stock')),
     }))
     return (
-      <ChartBox height={Math.max(220, data.length * 38 + 40)}>
+      <ChartBox height={Math.max(260, data.length * 44 + 60)}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
             <CartesianGrid horizontal={false} stroke="rgba(255,255,255,0.06)" />
             <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-            <YAxis type="category" dataKey="name" width={180} tickLine={false} axisLine={false} tick={{ fill: '#F4EFE6', fontSize: 11 }} />
+            <YAxis type="category" dataKey="name" width={150} tickLine={false} axisLine={false} tick={{ fill: '#F4EFE6', fontSize: 11 }} />
             <Tooltip contentStyle={TOOLTIP} />
             <Bar dataKey="value" name="Stock" fill="#F59E0B" radius={[0, 4, 4, 0]} />
           </BarChart>
@@ -197,13 +202,15 @@ function SpendBars({
   data,
   label,
   currency = true,
+  truncateNames = 20,
 }: {
   data: { name: string; value: number }[]
   label: string
   currency?: boolean
+  truncateNames?: number
 }) {
-  const truncatedData = data.map((d) => ({ ...d, name: truncate(d.name, 32) }))
-  const chartHeight = Math.max(220, data.length * 38 + 40)
+  const truncatedData = data.map((d) => ({ ...d, name: truncate(d.name, truncateNames) }))
+  const chartHeight = Math.max(260, data.length * 44 + 60)
 
   return (
     <ChartBox height={chartHeight}>
@@ -214,7 +221,7 @@ function SpendBars({
           <YAxis
             type="category"
             dataKey="name"
-            width={180}
+            width={150}
             tickLine={false}
             axisLine={false}
             tick={{ fill: '#F4EFE6', fontSize: 11 }}
@@ -233,8 +240,15 @@ function SpendBars({
 function Donut({ data }: { data: { name: string; value: number }[] }) {
   const total = data.reduce((sum, d) => sum + d.value, 0)
 
+  // Only show label on slices > 8% to avoid overlap
+  const renderLabel = ({ name, percent }: any) => {
+    if (percent < 0.08) return null
+    const pct = Math.round(percent * 100)
+    return `${truncate(name, 14)} ${pct}%`
+  }
+
   return (
-    <ChartBox height={260}>
+    <ChartBox height={300}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -242,15 +256,12 @@ function Donut({ data }: { data: { name: string; value: number }[] }) {
             dataKey="value"
             nameKey="name"
             cx="50%"
-            cy="45%"
-            innerRadius={48}
-            outerRadius={80}
+            cy="42%"
+            innerRadius={52}
+            outerRadius={88}
             paddingAngle={3}
-            label={({ name, value }) => {
-              const pct = total > 0 ? Math.round((value / total) * 100) : 0
-              return `${truncate(name, 16)} (${pct}%)`
-            }}
-            labelLine={{ stroke: 'rgba(255,255,255,0.3)', strokeWidth: 1 }}
+            label={renderLabel}
+            labelLine={{ stroke: 'rgba(255,255,255,0.25)', strokeWidth: 1 }}
           >
             {data.map((_, i) => (
               <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -265,8 +276,8 @@ function Donut({ data }: { data: { name: string; value: number }[] }) {
           />
           <Legend
             verticalAlign="bottom"
-            iconSize={8}
-            formatter={(val: string) => truncate(val, 20)}
+            iconSize={10}
+            formatter={(val: string) => truncate(val, 18)}
           />
         </PieChart>
       </ResponsiveContainer>

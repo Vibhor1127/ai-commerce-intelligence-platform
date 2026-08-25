@@ -26,6 +26,7 @@ class OrderStatusServiceTest {
     @Mock private OrderStatusHistoryRepository historyRepository;
     @Mock private ProductRepository productRepository;
     @Mock private InventoryLogRepository inventoryLogRepository;
+    @Mock private JsonCacheService cache;
 
     private OrderStatusService orderStatusService;
 
@@ -35,7 +36,8 @@ class OrderStatusServiceTest {
                 orderRepository,
                 historyRepository,
                 productRepository,
-                inventoryLogRepository
+                inventoryLogRepository,
+                cache
         );
     }
 

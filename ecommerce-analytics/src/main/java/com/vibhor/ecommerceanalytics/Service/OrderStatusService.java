@@ -48,17 +48,20 @@ public class OrderStatusService {
     private final OrderStatusHistoryRepository historyRepository;
     private final ProductRepository productRepository;
     private final InventoryLogRepository inventoryLogRepository;
+    private final JsonCacheService cache;
 
     public OrderStatusService(
             OrderRepository orderRepository,
             OrderStatusHistoryRepository historyRepository,
             ProductRepository productRepository,
-            InventoryLogRepository inventoryLogRepository
+            InventoryLogRepository inventoryLogRepository,
+            JsonCacheService cache
     ) {
         this.orderRepository = orderRepository;
         this.historyRepository = historyRepository;
         this.productRepository = productRepository;
         this.inventoryLogRepository = inventoryLogRepository;
+        this.cache = cache;
     }
 
     /**
@@ -98,7 +101,13 @@ public class OrderStatusService {
 
         // Update the order status
         order.setStatus(newStatus);
-        return orderRepository.save(order);
+        orders saved = orderRepository.save(order);
+
+        // Evict caches — status changes affect order analytics, inventory, and dashboard
+        cache.evictAll("analytics");
+        cache.evictAll("dashboard");
+
+        return saved;
     }
 
     /**

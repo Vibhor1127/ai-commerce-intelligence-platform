@@ -416,6 +416,30 @@ class ApiService {
       return REPLICA_CATEGORY_REVENUE
     }
   }
+
+  async getCustomerLifetimeValue() {
+    try {
+      return await this.request('/analytics/customer-lifetime-value')
+    } catch {
+      return []
+    }
+  }
+
+  async getInactiveCustomers() {
+    try {
+      return await this.request('/analytics/inactive-customers')
+    } catch {
+      return []
+    }
+  }
+
+  async getInventoryAlerts() {
+    try {
+      return await this.request('/analytics/inventory-alerts')
+    } catch {
+      return []
+    }
+  }
 }
 
 export const api = new ApiService()

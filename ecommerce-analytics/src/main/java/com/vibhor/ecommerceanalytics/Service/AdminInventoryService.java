@@ -22,19 +22,22 @@ public class AdminInventoryService {
     private final InventoryLogRepository inventoryLogRepository;
     private final ReviewRepository reviewRepository;
     private final OrderRepository orderRepository;
+    private final JsonCacheService cache;
 
     public AdminInventoryService(
             ProductRepository productRepository,
             CategoryRepository categoryRepository,
             InventoryLogRepository inventoryLogRepository,
             ReviewRepository reviewRepository,
-            OrderRepository orderRepository
+            OrderRepository orderRepository,
+            JsonCacheService cache
     ) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.inventoryLogRepository = inventoryLogRepository;
         this.reviewRepository = reviewRepository;
         this.orderRepository = orderRepository;
+        this.cache = cache;
     }
 
     @Transactional(readOnly = true)
@@ -64,6 +67,7 @@ public class AdminInventoryService {
         log.setChangeDate(LocalDateTime.now());
         inventoryLogRepository.save(log);
 
+        evictProductCaches();
         return toCard(p);
     }
 
@@ -92,6 +96,7 @@ public class AdminInventoryService {
             inventoryLogRepository.save(log);
         }
 
+        evictProductCaches();
         return toCard(p);
     }
 
@@ -112,6 +117,7 @@ public class AdminInventoryService {
         log.setChangeDate(LocalDateTime.now());
         inventoryLogRepository.save(log);
 
+        evictProductCaches();
         return toInventory(p);
     }
 
@@ -156,6 +162,15 @@ public class AdminInventoryService {
                 .lowStock(stock <= LOW_STOCK_THRESHOLD)
                 .lastRestockDate(inventoryLogRepository.findLastChangeDate(p.getProductId()).orElse(null))
                 .build();
+    }
+
+    /**
+     * Evict all product/inventory-related caches so dashboards and AI
+     * reflect the latest stock levels immediately.
+     */
+    private void evictProductCaches() {
+        cache.evictAll("analytics");
+        cache.evictAll("dashboard");
     }
 
     // ============================================================

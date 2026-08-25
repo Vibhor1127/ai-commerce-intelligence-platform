@@ -1,6 +1,5 @@
 package com.vibhor.ecommerceanalytics.Service;
 
-import com.vibhor.ecommerceanalytics.Config.RedisConfig;
 import com.vibhor.ecommerceanalytics.DTO.CustomerRequestDTO;
 import com.vibhor.ecommerceanalytics.DTO.CustomerResponseDTO;
 import com.vibhor.ecommerceanalytics.Entity.customers;
@@ -8,8 +7,6 @@ import com.vibhor.ecommerceanalytics.Exception.CustomerNotFoundException;
 import com.vibhor.ecommerceanalytics.Repository.CustomerRepository;
 import com.vibhor.ecommerceanalytics.util.CustomerMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +18,9 @@ public class CustomerService {
     @Autowired
     private CustomerRepository customerRepository;
 
+    @Autowired
+    private JsonCacheService cache;
+
     public List<CustomerResponseDTO> getAllCustomers() {
         return customerRepository.findAll().stream()
                 .map(CustomerMapper::entityToDto)
@@ -31,24 +31,14 @@ public class CustomerService {
         return customerRepository.findById(id).map(CustomerMapper::entityToDto);
     }
 
-    @Caching(evict = {
-            @CacheEvict(value = RedisConfig.CACHE_TOP_CUSTOMERS, allEntries = true),
-            @CacheEvict(value = RedisConfig.CACHE_LIFETIME_VALUE, allEntries = true),
-            @CacheEvict(value = RedisConfig.CACHE_INACTIVE_CUSTOMERS, allEntries = true),
-            @CacheEvict(value = RedisConfig.CACHE_DASHBOARD, allEntries = true)
-    })
     public CustomerResponseDTO addCustomer(CustomerRequestDTO dto) {
         customers customer = CustomerMapper.DtoToEntity(dto);
         customers savedCustomer = customerRepository.save(customer);
+        cache.evictAll("analytics");
+        cache.evictAll("dashboard");
         return CustomerMapper.entityToDto(savedCustomer);
     }
 
-    @Caching(evict = {
-            @CacheEvict(value = RedisConfig.CACHE_TOP_CUSTOMERS, allEntries = true),
-            @CacheEvict(value = RedisConfig.CACHE_LIFETIME_VALUE, allEntries = true),
-            @CacheEvict(value = RedisConfig.CACHE_INACTIVE_CUSTOMERS, allEntries = true),
-            @CacheEvict(value = RedisConfig.CACHE_DASHBOARD, allEntries = true)
-    })
     public CustomerResponseDTO UpdateCustomer(Integer id, CustomerRequestDTO dto) {
         Optional<customers> existing = customerRepository.findById(id);
         if (existing.isPresent()) {
@@ -60,19 +50,17 @@ public class CustomerService {
             oldcustomer.setSignupDate(dto.getSignupDate());
 
             customers savedCustomer = customerRepository.save(oldcustomer);
+            cache.evictAll("analytics");
+            cache.evictAll("dashboard");
             return CustomerMapper.entityToDto(savedCustomer);
         } else {
             throw new CustomerNotFoundException(id);
         }
     }
 
-    @Caching(evict = {
-            @CacheEvict(value = RedisConfig.CACHE_TOP_CUSTOMERS, allEntries = true),
-            @CacheEvict(value = RedisConfig.CACHE_LIFETIME_VALUE, allEntries = true),
-            @CacheEvict(value = RedisConfig.CACHE_INACTIVE_CUSTOMERS, allEntries = true),
-            @CacheEvict(value = RedisConfig.CACHE_DASHBOARD, allEntries = true)
-    })
     public void DeleteCustomer(Integer id) {
         customerRepository.deleteById(id);
+        cache.evictAll("analytics");
+        cache.evictAll("dashboard");
     }
 }
